@@ -5,20 +5,24 @@ library(INLA)
 library(inlabru)
 library(sf)
 library(fmesher)
+library(units)
 
 
 dist_to_nearest_line_transect <- function(pts, transects){
-  # converts from kilometres to metres
-  distance_to_each_transect <- 1000 * st_distance(pts, transects)
+  # this should be in kilometres
+  distance_to_each_transect <- st_distance(pts, transects)
   #distance to nearest line transect
   apply(distance_to_each_transect, 1, min)
+  
+  #  preserving the same units causes issues with exponentiation later
+  # as_units(dd, units(distance_to_each_transect))
 }
 
 
 simulate_lcgp <- function(
     true_alpha = 2, true_rho = 500, true_sigma_GRF=1,
-    true_beta0=0.5,
-    halfwidth_metres = 8
+    true_beta0= -5,
+    halfwidth_km = 8
 ){
   
   # this uses the mexdolphins dataset as a template
@@ -26,7 +30,10 @@ simulate_lcgp <- function(
   
   line_transects <- inlabru::mexdolphin_sf$samplers$geometry
   # the observable region around the line transects
-  polygon_transects <- st_buffer(line_transects, halfwidth_metres, endCapStyle = "FLAT")
+  polygon_transects <- st_buffer(
+    line_transects,
+    set_units(halfwidth_km, "km"),
+    endCapStyle = "FLAT")
 
   # sample from the grf and get the underlying log intensity
   grf_samples <- fmesher::fm_matern_sample(
@@ -112,21 +119,22 @@ simulate_lcgp_distance_thinning <- function(
   output_list
 }
 
-
+# 
 # ss <- simulate_lcgp(true_beta0=-5)
+# boxplot(ss$samples_df$distance)
 # 
 # plot(ss$the_mesh)
 # plot(ss$samples_df$geometry, add=T)
 # nrow(ss$samples_df)
 # plot(mexdolphin_sf$samplers$geometry, add = T, col = "red")
-
-
+# 
+# 
 # simulate_lcgp_constant_thinning(.5,.7)
 # 
 # simulate_lcgp_distance_thinning(
 #   detect_func = function(distance, sigma){ exp(-0.5 * (distance / sigma)^2 ) },
 #   detect_func_paramA = 3, detect_func_paramB = 7
 # )
-# 
+
 
 
