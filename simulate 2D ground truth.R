@@ -1,65 +1,56 @@
 rm(list=ls());while(dev.cur()>1){dev.off()};old_par<- par(no.readonly = T, pch=19)
-set.seed(123)
+
 library("MASS")
 library(INLA)
 library(inlabru)
 library(sf)
 library(fmesher)
 
-mm <- fm_mesh_2d(
-  loc.domain=mexdolphin_sf$ppoly,
-  crs=mexdolphin_sf$mesh$crs,
-  max.edge= c(3,5),
-  cutoff=1
-)
-mm
 
-plot(mm)
-
-
-# Matern correlation
-cMatern <- function(dist_ij, nu, kappa) {
-  # https://becarioprecario.bitbucket.io/spde-gitbook/ch-intro.html#sec:matern
-  ifelse(
-    dist_ij > 0,
-    besselK(dist_ij * kappa, nu) * (dist_ij * kappa)^nu /(gamma(nu) * 2^(nu - 1)),
-    1)
+dist_to_nearest_line_transect <- function(pts, transects){
+  # converts from kilometres to metres
+  distance_to_each_transect <- 1000 * st_distance(pts, transects)
+  #distance to nearest line transect
+  apply(distance_to_each_transect, 1, min)
 }
 
-simulate_lcgp <- function(
-    domain_boundary = inlabru::mexdolphin_sf$ppoly,
-    true_nu=1.5, true_kappa = 0.8, true_sigmaU=1,
-    true_beta0=0.5, approx_sampling_points = 200
-){
-  #get the points at which we want to sample the grf
-  # grabbing them from a mesh of the gorillas dataset because why not
-  
-  mesh1 <- fm_mesh_2d_inla(
-    loc.domain= domain_boundary,
-    # max.edge = c(1), 
-    # cutoff = .3,
-    # max.n = approx_sampling_points,
-    crs = gorillas_sf$mesh$crs
-  )
 
-  # dist matrix for these points - necessary for grf's matern covariance
-  dmat <- as.matrix(dist(mesh1$loc))
+simulate_lcgp <- function(
+    true_alpha = 2, true_rho = 500, true_sigma_GRF=1,
+    true_beta0=0.5,
+    halfwidth_metres = 8
+){
   
+  # this uses the mexdolphins dataset as a template
+  mesh1 <- inlabru::mexdolphin_sf$mesh
+  
+  line_transects <- inlabru::mexdolphin_sf$samplers$geometry
+  # the observable region around the line transects
+  polygon_transects <- st_buffer(line_transects, halfwidth_metres, endCapStyle = "FLAT")
+
   # sample from the grf and get the underlying log intensity
-  matern_cov <- true_sigmaU * cMatern(dmat, true_nu, true_kappa)
+  grf_samples <- fmesher::fm_matern_sample(
+    mesh1,
+    alpha = true_alpha, rho = true_rho,
+    sigma = true_sigma_GRF
+  )
+  cat("sampled GRF \n ")
   # ln lambda = beta0 + grf
-  log_lambda_true_underlying <- true_beta0 + mvrnorm(mu=rep(0, nrow(dmat)),Sigma=matern_cov)
-  
-  # sample the count process given the intensity
+  log_lambda_true_underlying <- true_beta0 + grf_samples
+
+  # sample the count process, given the intensity, only in the observable regions 
+  s <- Sys.time()
   samples_df <- sample.lgcp(
     mesh1,
-    log_lambda_true_underlying
+    log_lambda_true_underlying,
+    samplers = polygon_transects
   )
+  e <- Sys.time()
+  print(e-s)
+  cat("sampled point process \n")
   
   #inventing the distance covariate
-  # this doesnt have the same interpretation outside of distance sampling
-  distance_resolution <- seq(0,8, length.out=1000)
-  samples_df$distance <- sample(distance_resolution, size=nrow(samples_df), replace=T)
+  samples_df$distance <- dist_to_nearest_line_transect(samples_df$geometry, line_transects)
   
   # calculate the true overall_lambda of the entire space
   ips <- fm_int(mesh1)
@@ -67,9 +58,11 @@ simulate_lcgp <- function(
   
   list(
     overall_lambda = overall_lambda,
+    lambda = log_lambda_true_underlying,
     samples_df = samples_df,
     true_abundance = nrow(samples_df),
-    the_mesh = mesh1
+    the_mesh = mesh1,
+    line_transects = line_transects
   )
   
 }
@@ -79,10 +72,7 @@ simulate_lcgp_constant_thinning <- function(
     pA, pB, ...
     ){
 
-  output_list <- simulate_lcgp(
-    true_nu, true_kappa, true_sigmaU,
-    true_beta0, approx_sampling_points
-  )
+  output_list <- simulate_lcgp(...)
   samples_df <- output_list$samples_df
   
 
@@ -105,10 +95,7 @@ simulate_lcgp_distance_thinning <- function(
   # the thinking behind the generic detect_func is that it can be extended as long as the 
   # function takes distance as the first argument.
   
-  output_list <- simulate_lcgp(
-    true_nu, true_kappa, true_sigmaU,
-    true_beta0, approx_sampling_points
-  )
+  output_list <- simulate_lcgp(...)
   samples_df <- output_list$samples_df
   
   
@@ -125,7 +112,14 @@ simulate_lcgp_distance_thinning <- function(
   output_list
 }
 
-plot(simulate_lcgp()$the_mesh)
+
+# ss <- simulate_lcgp(true_beta0=-5)
+# 
+# plot(ss$the_mesh)
+# plot(ss$samples_df$geometry, add=T)
+# nrow(ss$samples_df)
+# plot(mexdolphin_sf$samplers$geometry, add = T, col = "red")
+
 
 # simulate_lcgp_constant_thinning(.5,.7)
 # 
