@@ -1,6 +1,5 @@
-rm(list=ls());while(dev.cur()>1){dev.off()};old_par<- par(no.readonly = T, pch=19)
+# rm(list=ls());while(dev.cur()>1){dev.off()};old_par<- par(no.readonly = T, pch=19)
 
-library("MASS")
 library(INLA)
 library(inlabru)
 library(sf)
@@ -9,11 +8,24 @@ library(units)
 
 
 dist_to_nearest_line_transect <- function(pts, transects){
+  
+  # cat("nearest sampler", class(pts), "\t")
   # this should be in kilometres
   distance_to_each_transect <- st_distance(pts, transects)
   #distance to nearest line transect
-  apply(distance_to_each_transect, 1, min)
+  d <- apply(distance_to_each_transect, 1, min)
+  # cat(class(d), "\t")
   
+  ii <- is.infinite(d) | is.nan(d) 
+  if (any(ii)){
+    cat("dist to samplers somehow got non finite or NaN values \n")
+    cat(class(pts), "\t", class(d), "\n")
+    cat(sum(ii), length(ii), "\n")
+    cat(d[ii], "\n")
+    for (el in pts[ii]){ cat(el, "\n") }
+  }
+  
+  d 
   #  preserving the same units causes issues with exponentiation later
   # as_units(dd, units(distance_to_each_transect))
 }
@@ -28,7 +40,7 @@ simulate_lcgp <- function(
   # this uses the mexdolphins dataset as a template
   mesh1 <- inlabru::mexdolphin_sf$mesh
   
-  line_transects <- inlabru::mexdolphin_sf$samplers$geometry
+  line_transects <- inlabru::mexdolphin_sf$samplers
   # the observable region around the line transects
   polygon_transects <- st_buffer(
     line_transects,
@@ -41,7 +53,7 @@ simulate_lcgp <- function(
     alpha = true_alpha, rho = true_rho,
     sigma = true_sigma_GRF
   )
-  cat("sampled GRF \n ")
+  cat("sampling underlying lgcp \n ")
   # ln lambda = beta0 + grf
   log_lambda_true_underlying <- true_beta0 + grf_samples
 
@@ -54,22 +66,24 @@ simulate_lcgp <- function(
   )
   e <- Sys.time()
   print(e-s)
-  cat("sampled point process \n")
+  # cat("sampled point process \n")
   
   #inventing the distance covariate
   samples_df$distance <- dist_to_nearest_line_transect(samples_df$geometry, line_transects)
   
-  # calculate the true overall_lambda of the entire space
+  # calculate the true intensity 
   ips <- fm_int(mesh1)
   overall_lambda = sum(ips$weight * exp(log_lambda_true_underlying) )
   
   list(
     overall_lambda = overall_lambda,
-    lambda = log_lambda_true_underlying,
+    log_lambda = log_lambda_true_underlying,
     samples_df = samples_df,
     true_abundance = nrow(samples_df),
     the_mesh = mesh1,
-    line_transects = line_transects
+    line_transects = line_transects,
+    buffered_transects = polygon_transects,
+    boundary = mexdolphin_sf$ppoly
   )
   
 }
