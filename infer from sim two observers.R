@@ -1,4 +1,4 @@
-rm(list=ls());while(dev.cur()>1){dev.off()};old_par<- par(no.readonly = T, pch=19)
+rm(list=ls());while(dev.cur()>1){dev.off()};old_par<- par(no.readonly = T, pch=19);options(digits=3)
 
 library(INLA)
 library(inlabru)
@@ -60,7 +60,7 @@ detect_func_2observer_sigma <- function(distance, sigmaA, sigmaB){
 
 ########### simulate the ground truth
 
-true_sigmaA <- 4; true_sigmaB <- 2
+true_sigmaA <- 4; true_sigmaB <- 2; true_range <- 500; true_sigma_grf <- 1
 set.seed(888)
 
 # simulate a ground truth
@@ -69,20 +69,15 @@ ground_truth <- simulate_lcgp_distance_thinning(
   detect_func_paramA = true_sigmaA,
   detect_func_paramB = true_sigmaB,
   true_beta0 = -5,
-  true_rho = 500, true_sigma_GRF=1
+  true_rho = true_range, true_sigma_GRF=true_sigma_grf
 )
+# 
+# #the sampled points are in dd
+# dd <- ground_truth$samples_df
 
-#the sampled points are in dd
-dd <- ground_truth$samples_df
-
-#preprocessing
-dd$detected <- 3
-dd$detected[ dd$detectA & !dd$detectB ] = 1
-dd$detected[ !dd$detectA & dd$detectB ] = 2
-
-overall_lambda <- ground_truth$overall_lambda
-nrow(dd); ground_truth$true_abundance;
-summary(dd$distance)
+# overall_lambda <- ground_truth$overall_lambda
+# nrow(dd); ground_truth$true_abundance;
+# summary(dd$distance)
 
 
 
@@ -101,24 +96,24 @@ matern_prior <- inla.spde2.pcmatern(
 # # Model just what observer B saw
 # fit_observer_B <- model_one_observer_hn(dd[dd$detectB, ], ground_truth, matern_prior)
 
-# Model what A and B saw as a combined observer
-fit_merged_observers <- model_one_observer_hn(dd, ground_truth, matern_prior)
-# Model what A and B saw as a two observer likelihood
-fit_two_observers <- model_two_observers_hn(dd, ground_truth, matern_prior)
-
-dists <- seq(1,8, length.out=1000)
-
-
-
-pred_detect_two_obs <- predict(
-  fit_two_observers,
-  formula = ~ detect_func_2observer_sigma(dists, sigmaA, sigmaB)
-)
-
-pred_detect_merged_obs <- predict(
-  fit_merged_observers,
-  formula = ~  hn(dists, sigma)
-)
+# # Model what A and B saw as a combined observer
+# fit_merged_observers <- model_one_observer_hn(dd, ground_truth, matern_prior)
+# # Model what A and B saw as a two observer likelihood
+# fit_two_observers <- model_two_observers_hn(dd, ground_truth, matern_prior)
+# 
+# dists <- 0:8#seq(0,8, length.out=1000)
+# 
+# 
+# 
+# pred_detect_two_obs <- predict(
+#   fit_two_observers,
+#   formula = ~ detect_func_2observer_sigma(dists, sigmaA, sigmaB)
+# )
+# 
+# pred_detect_merged_obs <- predict(
+#   fit_merged_observers,
+#   formula = ~  hn(dists, sigma)
+# )
 
 # pred_detect_obs_A <- predict(
 #   fit_observer_A,
@@ -130,25 +125,119 @@ pred_detect_merged_obs <- predict(
 #   formula = ~ hn(dists, sigma)
 # )
 
-res <- rbind(
-  cbind(pred_detect_two_obs, model="two obs"),
-  cbind(pred_detect_merged_obs, model="merged") 
+get_spatial_param_width <- function(mdl, param, correct){
+  # checks if the model's 95% credible interval contains the true value of a hyperparam
+  # if so it returns 1 and the interval width
+  cred_int <- mdl$summary.hyperpar[param, c("0.025quant", "0.975quant")]
+  cred_int <- unlist(cred_int)
+  
+  if ( cred_int[1] <= correct & correct <= cred_int[2] ){
+    c(1, diff(cred_int) )
+  } else {
+    c(0, NA)
+  }
+}
+
+compare_merged_vs_two_observer_models <- function(
+    merged, two_obs,
+    true_sigmaA, true_sigmaB, dist_res,
+    do_plot = F,
+    true_spatial_range=true_range, true_spatial_stdv = true_sigma_grf
+    ){
+  
+  output <- matrix(NA, 2, ncol=1+4+1)
+  
+  
+  true_detect <- detect_func_2observer_sigma(dist_res, true_sigmaA, true_sigmaB)
+  
+  output[1:2, i<-1] <- c("merged", "two obs")
+  
+  output[1, 2:3] <- get_spatial_param_width(merged, "Range", true_spatial_range)
+  output[1, 4:5] <- get_spatial_param_width(merged, "Stdev", true_spatial_stdv)
+  
+  pred_detect_merged_obs <- predict(merged, formula = ~ hn(dist_res, sigma))
+  output[1, 6] <- mean(abs( pred_detect_merged_obs$mean - true_detect ))
+  
+  
+  output[2, 2:3] <- get_spatial_param_width(two_obs, "Range", true_spatial_range)
+  output[2, 4:5] <- get_spatial_param_width(two_obs, "Stdev", true_spatial_stdv)
+  
+  pred_detect_two_obs <- predict(two_obs, formula = ~ detect_func_2observer_sigma(dist_res, sigmaA, sigmaB) )
+  output[2, 6] <- mean(abs( pred_detect_two_obs$mean - true_detect ))
+  
+  if( do_plot){
+    res <- rbind(
+      cbind(pred_detect_two_obs, model="two obs"),
+      cbind(pred_detect_merged_obs, model="merged") 
+    )
+    res$distance <- rep(dist_res, 2)
+    res$Truth <- rep(true_detect, 2)
+    
+    g <- ggplot(res) +
+      geom_ribbon(aes(x=distance, ymin=q0.025, max=q0.975, fill=model),  alpha=.3 ) +
+      geom_line(aes(x=distance, y=mean,color=model), linewidth=1.5) +
+      geom_line(aes(distance, Truth), linewidth=1.5) +
+      labs(y="detection probability", title = "Estimates of the detection function \t Black = Truth") +
+      ylim(0,1)
+    
+    print(g)
+  }
+  
+  output
+}
+
+
+dists <- seq(0,8, length.out=1000)
+
+set.seed(500)
+nsims <- 100
+results <- matrix(NA, nrow=2*nsims, ncol=6)
+colnames(results) <- c("model", "range_correct", "range_CI_width", "stdv_correct", "stdv_CI_width", "MAE_detection")
+
+for (i in 1:nsims){
+  catt("Simulation", i, "of", nsims)
+  
+  # simulate a ground truth
+  ground_truth <- simulate_lcgp_distance_thinning(
+    detect_func = hn,
+    detect_func_paramA = true_sigmaA,
+    detect_func_paramB = true_sigmaB,
+    true_beta0 = -5,
+    true_rho = true_range, true_sigma_GRF=true_sigma_grf
   )
-res$distance <- rep(dists, 2)
-res$Truth <- rep(detect_func_2observer_sigma(dists, true_sigmaA, true_sigmaB), 2)
+  
+  #the sampled points are in dd
+  dd <- ground_truth$samples_df
+  
+  catt(nrow(dd), ground_truth$true_abundance)
+  
+  # Model what A and B saw as a combined observer
+  catt("fitting merged")
+  fit_merged_observers <- model_one_observer_hn(dd, ground_truth, matern_prior)
+  # Model what A and B saw as a two observer likelihood
+  catt("fitting two")
+  fit_two_observers <- model_two_observers_hn(dd, ground_truth, matern_prior)
+  
+  
+  catt("comparing the two")
+  results[2*i-1:0,] <- compare_merged_vs_two_observer_models(
+    fit_merged_observers, fit_two_observers,
+    true_sigmaA, true_sigmaB, dists,
+    do_plot = F
+  )
+}
+results
 
 
-ggplot(res) +
-  geom_ribbon(aes(x=distance, ymin=q0.025, max=q0.975, fill=model),  alpha=.3 ) +
-  geom_line(aes(x=distance, y=mean,color=model), linewidth=1.5) +
-  geom_line(aes(distance, Truth), linewidth=1.5) +
-  labs(y="detection probability", title = "Estimates of the detection function \t Black = Truth") +
-  ylim(0,1)
+results <- as.data.frame(results)
+# the model column is a character so everything in the matrix became so
+results[-1] <- lapply(results[-1], as.numeric)
 
 
+ggplot(results) + geom_boxplot(aes(model, MAE_detection)) +
+  ylim(0, max(results$MAE_detection))
 
-
-
+save(results, file="Saturday-60sims.rda")
 
 
 
