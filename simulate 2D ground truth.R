@@ -103,8 +103,14 @@ simulate_lcgp_constant_thinning <- function(
 
   ii <- ( samples_df$detectA | samples_df$detectB ) 
   
-  output_list$samples_df <- samples_df[ii,]
+  samples_df <- samples_df[ii,]
   
+  #preprocessing for detection states
+  samples_df$detected <- 3
+  samples_df$detected[ samples_df$detectA  & !samples_df$detectB ] = 1
+  samples_df$detected[ !samples_df$detectA & samples_df$detectB ] = 2
+  
+  output_list$samples_df <- samples_df
   output_list
 
 }
@@ -129,7 +135,14 @@ simulate_lcgp_distance_thinning <- function(
   
   ii <- ( samples_df$detectA | samples_df$detectB ) 
   
-  output_list$samples_df <- samples_df[ii,]
+  samples_df <- samples_df[ii,]
+  
+  #preprocessing for detection states
+  samples_df$detected <- 3
+  samples_df$detected[ samples_df$detectA  & !samples_df$detectB ] = 1
+  samples_df$detected[ !samples_df$detectA & samples_df$detectB ] = 2
+  
+  output_list$samples_df <- samples_df
   output_list
 }
 
