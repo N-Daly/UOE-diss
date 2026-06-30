@@ -53,19 +53,20 @@ simulate_lcgp <- function(
     alpha = true_alpha, rho = true_rho,
     sigma = true_sigma_GRF
   )
-  cat("sampling underlying lgcp \n ")
+  # cat("sampling underlying lgcp \n ")
+  
   # ln lambda = beta0 + grf
   log_lambda_true_underlying <- true_beta0 + grf_samples
 
   # sample the count process, given the intensity, only in the observable regions 
-  s <- Sys.time()
+  # s <- Sys.time()
   samples_df <- sample.lgcp(
     mesh1,
     log_lambda_true_underlying,
     samplers = polygon_transects
   )
-  e <- Sys.time()
-  print(e-s)
+  # e <- Sys.time()
+  # print(e-s)
   # cat("sampled point process \n")
   
   #inventing the distance covariate
