@@ -44,7 +44,7 @@ model_one_observer_hn <- function(
     domain = list(geometry=fm_subdivide(mesh1, 3) ),
     # the observed regions are line transects expanded outwards by the transect widths, right?
     samplers = construction_info$buffered_transects,
-    options = list(bru_verbose= 1,
+    options = list(bru_verbose= 0,
                    # verbose = 4,
                    bru_initial = list(sigma = half_width/4) # need to review this 
     )
@@ -105,7 +105,7 @@ model_two_observers_hn <- function(
     # the observed regions are line transects expanded outwards by the transect widths, right?
     # not sure what'll happen with the detected states
     samplers = construction_info$buffered_transects,
-    options = list(bru_verbose= 1,
+    options = list(bru_verbose= 0,
                    # verbose = 4,
                    bru_initial = list(sigmaA = half_width/4, sigmaB = half_width/4) # need to review this
     )
