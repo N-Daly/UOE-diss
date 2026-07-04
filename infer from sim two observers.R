@@ -67,6 +67,13 @@ get_spatial_param_width <- function(mdl, param, correct){
   }
 }
 
+dawid_sebastiani_score <- function(post_pred, true_value){
+  E <- post_pred$mean
+  V <- post_pred$mean.mc_std_err^2
+  ( (true_value - E)^2 / V)  + log(V)
+}
+
+
 compare_merged_vs_two_observer_models <- function(
     merged, two_obs,
     true_sigmaA, true_sigmaB, dist_res,
@@ -131,57 +138,128 @@ matern_prior <- inla.spde2.pcmatern(
 
 dists <- seq(0,8, length.out=1000)
 
-set.seed(1234)
-nsims <- 100
-results <- matrix(NA, nrow=2*nsims, ncol=6)
-colnames(results) <- c("model", "range_correct", "range_CI_width", "stdv_correct", "stdv_CI_width", "MAE_detection")
 
-for (i in 1:nsims){
-  catt("Simulation", i, "of", nsims)
+set.seed(800)
+# simulate a ground truth
+sim_info <- simulate_lcgp_distance_thinning(
+  detect_func = hn,
+  detect_func_paramA = true_sigmaA,
+  detect_func_paramB = true_sigmaB,
+  true_beta0 = -5,
+  true_rho = true_range, true_sigma_GRF=true_sigma_grf
+)
+
+#the sampled points are in dd
+dd <- sim_info$samples_df
+
+# Model what A and B saw as a combined observer
+catt("fitting merged")
+start <- Sys.time()
+fit_merged_observers <- model_one_observer_hn(dd, sim_info, matern_prior)
+end <- Sys.time()
+catt(end-start)
+
+# Model what A and B saw as a two observer likelihood
+catt("fitting two")
+start <- Sys.time()
+fit_two_observers <- model_two_observers_hn(dd, sim_info, matern_prior)
+end <- Sys.time()
+catt(end-start)
+
+
+get_DS_score_difference <- function(
+    sim_info, fit_merged_observers, fit_two_observers
+    ){
   
-  # simulate a ground truth
-  ground_truth <- simulate_lcgp_distance_thinning(
-    detect_func = hn,
-    detect_func_paramA = true_sigmaA,
-    detect_func_paramB = true_sigmaB,
-    true_beta0 = -5,
-    true_rho = true_range, true_sigma_GRF=true_sigma_grf
+  #both models predict log lambda
+  merged_observers_pred <- predict(
+    fit_merged_observers, sim_info$interior_vertices,
+    formula = ~ {
+      list(
+        lambda=exp(Intercept + spde),
+        log_lambda = Intercept + spde
+      )
+    },
+    n.samples=2000
   )
-  
-  #the sampled points are in dd
-  dd <- ground_truth$samples_df
-  
-  # Model what A and B saw as a combined observer
-  catt("fitting merged")
-  start <- Sys.time()
-  fit_merged_observers <- model_one_observer_hn(dd, ground_truth, matern_prior)
-  end <- Sys.time()
-  catt(end-start)
-  
-  # Model what A and B saw as a two observer likelihood
-  catt("fitting two")
-  start <- Sys.time()
-  fit_two_observers <- model_two_observers_hn(dd, ground_truth, matern_prior)
-  end <- Sys.time()
-  catt(end-start)
-  
-  catt("comparing the two")
-  results[2*i-1:0,] <- compare_merged_vs_two_observer_models(
-    fit_merged_observers, fit_two_observers,
-    true_sigmaA, true_sigmaB, dists,
-    do_plot = T
+  two_observers_pred <- predict(
+    fit_two_observers, sim_info$interior_vertices,
+    formula = ~ {
+      list(
+        lambda=exp(Intercept + spde),
+        log_lambda = Intercept + spde
+      )
+    },
+    n.samples=2000
   )
+  # DS score at vertices
+  merged_observers_DS <- dawid_sebastiani_score(merged_observers_pred$log_lambda, sim_info$log_lambda)
+  two_observers_DS <- dawid_sebastiani_score(two_observers_pred$log_lambda, sim_info$log_lambda)
+  
+  length(merged_observers_DS); length(two_observers_DS);length(sim_info$log_lambda)
+  # get the difference in DS scores relative to a single merged observer model
+  DS_score_difference <- merged_observers_DS - two_observers_DS
+  
+  # integrated DS score difference over the study region
+  integrated_DS_difference <- sum(sim_info$interior_ips$weight * DS_score_difference)
+  
+  integrated_DS_difference
 }
-results
 
 
-results <- as.data.frame(results)
-# the model column is a character so so did everything else in the matrix  
-results[-1] <- lapply(results[-1], as.numeric)
+get_DS_score_difference(sim_info, fit_merged_observers, fit_two_observers)
 
-
-
-save(results, file="-sims.rda")
+# set.seed(1234)
+# nsims <- 10
+# results <- matrix(NA, nrow=2*nsims, ncol=6)
+# colnames(results) <- c("model", "range_correct", "range_CI_width", "stdv_correct", "stdv_CI_width", "MAE_detection")
+# 
+# for (i in 1:nsims){
+#   catt("Simulation", i, "of", nsims)
+#   
+#   # simulate a ground truth
+#   sim_info <- simulate_lcgp_distance_thinning(
+#     detect_func = hn,
+#     detect_func_paramA = true_sigmaA,
+#     detect_func_paramB = true_sigmaB,
+#     true_beta0 = -5,
+#     true_rho = true_range, true_sigma_GRF=true_sigma_grf
+#   )
+#   
+#   #the sampled points are in dd
+#   dd <- sim_info$samples_df
+#   
+#   # Model what A and B saw as a combined observer
+#   catt("fitting merged")
+#   start <- Sys.time()
+#   fit_merged_observers <- model_one_observer_hn(dd, sim_info, matern_prior)
+#   end <- Sys.time()
+#   catt(end-start)
+#   
+#   # Model what A and B saw as a two observer likelihood
+#   catt("fitting two")
+#   start <- Sys.time()
+#   fit_two_observers <- model_two_observers_hn(dd, sim_info, matern_prior)
+#   end <- Sys.time()
+#   catt(end-start)
+#   
+#   catt("comparing the two")
+#   results[2*i-1:0,] <- compare_merged_vs_two_observer_models(
+#     fit_merged_observers, fit_two_observers,
+#     true_sigmaA, true_sigmaB, dists,
+#     do_plot = T
+#   )
+# }
+# results
+# 
+# 
+# results <- as.data.frame(results)
+# # the model column is a character so so did everything else in the matrix  
+# results[-1] <- lapply(results[-1], as.numeric)
+# 
+# 
+# 
+# save(results, file="-sims.rda")
 
 
 
