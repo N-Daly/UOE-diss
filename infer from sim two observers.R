@@ -57,7 +57,8 @@ detect_func_2observer_sigma <- function(distance, sigmaA, sigmaB){
 
 dawid_sebastiani_score <- function(post_pred, true_value){
   E <- post_pred$mean
-  V <- post_pred$mean.mc_std_err^2
+  # i am not sure if this step is correct
+  V <- post_pred$sd^2
   ( (true_value - E)^2 / V)  + log(V)
 }
 
@@ -108,7 +109,7 @@ get_scoring_differences <- function(
   merged_observers_DS <- dawid_sebastiani_score(merged_observer_pred$log_lambda, loglambda)
   two_observers_DS <- dawid_sebastiani_score(two_observers_pred$log_lambda, loglambda)
   # integrated DS score difference over the study region
-  integrated_DS_difference <- sum(sim_info$interior_ips$weight * (merged_observers_DS - two_observers_DS) )
+  integrated_DS_difference <- sum( sim_info$interior_ips$weight * (merged_observers_DS - two_observers_DS) )
   
   # MSE scores on the posterior mean for log lambda
   merged_observers_MSE <- mean(merged_observer_pred$log_lambda$mean - loglambda)
@@ -228,15 +229,16 @@ saveRDS(results, file="sat-4-07-score-results.rda")
 
 # plot the difference in scores, a difference of zero implies the models perform the same wrt to that score
 # all scores are negatively orientated so a positive difference means the simpler merged observer model
-# performed better
-# the Dawid-Sebastiani score is on a very large scale so im omitting the zero baseline
+# performed worse
 
-dsp <- ggplot(results) + geom_boxplot(aes(y=DS))
-maep <- ggplot(results) + geom_boxplot(aes(y=MAE)) + expand_limits(y=0)
-msep <- ggplot(results) + geom_boxplot(aes(y=MSE)) +  expand_limits(y=0)
-maedetectp <- ggplot(results) + geom_boxplot(aes(y=MAE_detection)) + expand_limits(y=0)
+g <- ggplot(results) + expand_limits(y=0) +  geom_abline(intercept = 0, slope = 0, colour="red", linewidth=2)
 
-(dsp + maep) / ( msep + maedetectp)
+dsp <-g + geom_boxplot(aes(y=DS)) + labs(title="integrated DS on log lambda")
+msep <- g + geom_boxplot(aes(y=MSE)) + labs(title="integrated MSE on mean log lambda")
+maep <- g + geom_boxplot(aes(y=MAE)) + labs(title = "integrated MAE on median lambda")
+maedetectp <- g + geom_boxplot(aes(y=MAE_detection)) + labs(title="MAE on detection prob") 
+
+(dsp + msep) / ( maep + maedetectp)
 
 
 
