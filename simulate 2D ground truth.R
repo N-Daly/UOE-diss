@@ -7,7 +7,7 @@ library(fmesher)
 library(units)
 
 
-dist_to_nearest_line_transect <- function(pts, transects){
+dist_to_nearest_line_transect <- function(pts, transects=sim_info$line_transects){
   
   # cat("nearest sampler", class(pts), "\t")
   # this should be in kilometres
