@@ -92,7 +92,7 @@ fit_model_with_it <- function(mesh, ips){
     formula = form,
     data =  sim_info$samples_df,
     ips = ips,
-    options = list(bru_verbose= 1,
+    options = list(bru_verbose= 0,
                    # verbose = 4,
                    bru_initial = list(sigma = half_width/4) # need to review this 
     )
@@ -101,7 +101,23 @@ fit_model_with_it <- function(mesh, ips){
   fit
 }
 
-
+repeated_model_fitting <- function(..., nreps=5){
+  
+  fit_times <- numeric(nreps)
+  
+  for (i in 1:nreps){ 
+    start <- proc.time()
+    fit <- fit_model_with_it(...)
+    end <- proc.time()
+    
+    fit_times[i] <- (end-start)[[3]]
+  }
+  
+  list(
+    last_model_fit = fit,
+    fit_times = fit_times
+  )
+}
 ################ the actual function ############
 
 make_spatially_varying_mesh <- function(param){
@@ -121,6 +137,7 @@ make_spatially_varying_mesh <- function(param){
   pts_near_line <- st_cast(sim_info$line_transects$geometry, "POINT")
   seed_points <- c(seed_points, pts_near_line)
   
+
   # make a mesh with:
   # an extension outside the study region, around 10% farther
   # no triangle angles smaller than 23 degrees
@@ -145,8 +162,8 @@ make_spatially_varying_mesh <- function(param){
 fit_time <- NULL
 param <- NULL
 error <- NULL
-
-for (i in seq(10,60, by=5) ){
+#seq(10,60, by=5)
+for (i in  seq(10, 100, by = 10)){
   cat("\n param =", i, "\n")
   start <- proc.time()
   cat("making mesh and ips \n")
@@ -166,38 +183,57 @@ for (i in seq(10,60, by=5) ){
   mpe <- plot_results(approx_dist)
   mtext(paste("param=",i, "# vertices =", nrow(fm_vertices(m)) ))
   
+  gc()
   #fit a simple model with spatial random effect and hn detection function
   start <- proc.time()
-
   some_model_fit <- fit_model_with_it(m, ips)
-
   end <- proc.time()
+  run_time <- (end-start)[[3]]
   print( (end-start)[3])
   
+  # there was no meaningful variation in repeated timings
+  
+  # repeated_fits <- repeated_model_fitting(mesh, ips)
+  # boxplot(repeated_fits$fit_times, ylim=range(0, repeated_fits$fit_times))
+  # run_time <- median(repeated_fits$fit_times)
+  # cat("median fitting time ", round(run_time), "\n")
+  # # this is just to have a model fit close to hand
+  # some_model_fit <- repeated_fits$last_model
+  
   #record stats
-  fit_time <- c(fit_time, (end-start)[[3]])
+  fit_time <- c(fit_time, run_time)
   param <- c(param, i)
   error <- c(error, mpe)
   
+  # quick save results in case R conks out on a big mesh
+  save(fit_time, param, error, file="quicksave.rda")
 }
+load("quicksave.rda")
 
-#error <- c(129, 85, 77, 65, 63, 62, 56, 49, 46, 43, 40)/100
+# i dont see a way of doing this in ggplot, not do i see a potential benefit
 plot(
   error, 
   fit_time,
   ylim = range(0, fit_time),
   xlim = range(0, error),
-  type = "c"
+  type = "c", # lines near but not connecting each point
+  xlab = "MAPE as %",
+  ylab = "fitting time in seconds",
+  main = "Trade off between computational time and mesh quality"
 )
+mtext("Number indicates the number of vertices in each mesh, in 1000s")
 text(
   error, 
   fit_time,
-  labels = param
+  labels = param,
+  col = rainbow(length(error)),
+  cex=1.5
 )
 
-ggplot() + gg(m) + gg(sim_info$boundary, color="red", alpha=.2) +
-  gg(sim_info$buffered_transects, color="brown", alpha=.2)+
-  ggspatial::annotation_scale(location="tr")
+# dont run this with large meshes
+# ggplot() + gg(m) + gg(sim_info$boundary, color="red", alpha=.2) +
+#   gg(sim_info$buffered_transects, color="brown", alpha=.2)+
+#   ggspatial::annotation_scale(location="tr")
 
 
 
