@@ -59,11 +59,12 @@ sample_a_detect_func_prior <- function(alpha, rho, sigma, evaluator=projector, t
   )
   spline_values <- fm_evaluate(proj=projector, field=prior_weights)
   spline_to_detect_func(spline_values)
+  # spline_values
 }
 
-plot(dists_grid, sample_a_detect_func_prior(2,1,1))
+# plot(dists_grid, sample_a_detect_func_prior(2,1,1))
 
-sample_splines_for_plot <- function(
+sample_detect_funcs_and_plot <- function(
     nreps=100, distances=dists_grid,
     alpha, rho, sigma
   ){
@@ -86,21 +87,24 @@ sample_splines_for_plot <- function(
     "rho =", rho,
     "sigma = ", sigma
   )
-  ggplot(samples, aes(x,y, group=iter))  + 
+  g<- ggplot(samples, aes(x,y, group=iter))  + 
     geom_line(alpha=.4) +
-    expand_limits(y=0:1) + ylim(c(0, 5)) +
+    expand_limits(y=0:1) + ylim(c(0, 2)) +
     labs(title = main)
+  print(g)
+  #samples
 }
 
 
 set.seed(123)
-sample_splines_for_plot(
-  nreps=200,
-  alpha=2, rho=2, sigma=.6
+sample_detect_funcs_and_plot(
+  nreps=10,
+  alpha=2, rho=4, sigma=.1
 )
 
+
 plot_the_variance(
-  alpha=2, rho=2, sigma=.6
+  alpha=2, rho=4, sigma=.1
 )
 
 
