@@ -120,7 +120,7 @@ repeated_model_fitting <- function(..., nreps=5){
 }
 ################ the actual function ############
 
-make_spatially_varying_mesh <- function(param){
+make_spatially_varying_mesh <- function(num_vertices){
   
   # this determines the target max edge length from each initially seeded vertex
   qual_loc <- function(locs){
@@ -147,7 +147,7 @@ make_spatially_varying_mesh <- function(param){
     , extend = list(offset=-.1),
     refine = list(
       min.angle = 23,
-      max.n = param*1000
+      max.n = num_vertices*1000
     ),
     quality.spec = list(
       loc = qual_loc(seed_points)
