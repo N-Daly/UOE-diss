@@ -142,7 +142,7 @@ make_spatially_varying_mesh <- function(param){
   # an extension outside the study region, around 10% farther
   # no triangle angles smaller than 23 degrees
   # there is some user set number of triangles, once reached the algorithm starts resizing edge lengths
-  mesh <- fm_rcdt_2d_inla(
+  mesh <- fm_rcdt_2d(
     loc = seed_points
     , extend = list(offset=-.1),
     refine = list(
