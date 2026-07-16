@@ -1,11 +1,12 @@
-rm(list=ls());while(dev.cur()>1){dev.off()};old_par<- par(no.readonly = T, pch=19)
+rm(list=ls());while(dev.cur()>1){dev.off()};old_par<- par(no.readonly = T, pch=19);options(digits=2)
 
 library(INLA)
 library(inlabru)
 library(sf)
 library(fmesher)
 library(ggplot2)
-library("patchwork")
+library(patchwork)
+library(ggspatial)
 
 my_dir <- r"(C:\Users\ND\OneDrive - University of Edinburgh\Dissertation\UOE-diss)"
 setwd(my_dir)
@@ -41,20 +42,22 @@ sim_info <- simulate_lcgp_distance_thinning(
 dd <- sim_info$samples_df
 
 detect_mesh <- fm_mesh_1d(
-  loc = seq(0,8, by =.5), 
+  loc = c(0, 4, 8), 
   boundary = c("dirichlet", "free"),
-  degree = 1
+  degree = 2
 )
 
-ips <- fm_int(
-  make_spatially_varying_mesh(20, sim_info),
-  samplers = sim_info$buffered_transects
-)
+ips <- st_as_sf( readRDS("ipsFromVaryingMesh60K.rda") )
+
+
+
+# ips <- fm_int(
+  # make_spatially_varying_mesh(60, sim_info),
+  # samplers = sim_info$buffered_transects
+# )
 ips$distance <- dist_to_nearest_line_transect(ips$geometry, sim_info$line_transects)
-
-#must save ips to file
-
-
+# saveRDS(ips, file = "ipsFromVaryingMesh60K.rda")
+head(ips)
 ############## model stuff
 
 matern_prior <- inla.spde2.pcmatern(
