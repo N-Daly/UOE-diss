@@ -16,7 +16,7 @@ spline_to_detect_func <- function(x){
 
 
 mesh <- fm_mesh_1d(
-  loc = seq(0,8, by=.5),
+  loc = 0:8,
   boundary = c("dirichlet", "free"),
   degree = 2
 )
@@ -98,13 +98,13 @@ sample_detect_funcs_and_plot <- function(
 
 set.seed(123)
 sample_detect_funcs_and_plot(
-  nreps=10,
-  alpha=2, rho=4, sigma=.1
+  nreps=100,
+  alpha=2, rho=2, sigma=.25
 )
 
 
 plot_the_variance(
-  alpha=2, rho=4, sigma=.1
+  alpha=2, rho=2, sigma=.25
 )
 
 

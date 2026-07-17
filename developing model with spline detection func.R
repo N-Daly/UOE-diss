@@ -42,12 +42,12 @@ sim_info <- simulate_lcgp_distance_thinning(
 dd <- sim_info$samples_df
 
 detect_mesh <- fm_mesh_1d(
-  loc = c(0, 4, 8), 
+  loc = seq(0,8, by=2), 
   boundary = c("dirichlet", "free"),
   degree = 2
 )
 
-ips <- st_as_sf( readRDS("ipsFromVaryingMesh60K.rda") )
+ips <- st_as_sf( readRDS("ips_interiorTransects_3subdivisions.rda") )
 
 
 
@@ -66,12 +66,12 @@ matern_prior <- inla.spde2.pcmatern(
   prior.sigma = c(.5, 0.5)   # true sigma is 1
 )
 
-# alpha=2, rho=4, sigma=.1
+# alpha=2, rho=2, sigma=.25
 detect_matern <- inla.spde2.pcmatern(
   detect_mesh,
   alpha = 2,
-  prior.range = c(4, 0.99), # P(rho < val) = alpha
-  prior.sigma = c(0.1, 0.01) # P(sigma > val) = alpha
+  prior.range = c(2, 0.99), # P(rho < val) = alpha
+  prior.sigma = c(0.25, 0.01) # P(sigma > val) = alpha
 )
 
 cmp <- ~ Intercept(1) +
@@ -95,10 +95,10 @@ fit
 pred <- predict(
   fit,
   data.frame(distance=dists),
-  ~ spline_detect_func(spline_spde),
+  ~ spline_spde,
   n.samples=1000
-)$mean
-
+)
+plot(dists, abs(pred$mean.mc_std_err/pred$mean) );abline(h=.05)
 
 
 cmp2 <- ~ Intercept(1) +
@@ -111,10 +111,7 @@ cmp2 <- ~ Intercept(1) +
 
 
 form2 <- geometry  ~ Intercept  +
-  log_hn(
-    distance,
-    sigma
-  ) +log(2)+ spde
+  log_hn(distance, sigma) +log(2)+ spde
 
 
 fit2 <- lgcp(
@@ -137,11 +134,11 @@ true_detect <- detect_func_2observer_sigma(dists, sigmaA, sigmaB)
 plot(
   dists,
   true_detect,
-  ylim = range(0:1, pred),
+  ylim = range(0:1, pred$mean),
   col = "red", type = "l"
 )
 lines(
-  dists, pred,
+  dists, pred$mean,
   lwd=2
 )
 lines(
@@ -151,7 +148,7 @@ lines(
 rug(dist_to_nearest_line_transect(dd$geometry))
 
 ggplot(NULL) + 
-  geom_ribbon(data = p, aes(x=distance, y=mean, ymin = q0.025, ymax=q0.975), fill="turquoise") +
+  geom_ribbon(data = pred, aes(x=distance, y=mean, ymin = q0.025, ymax=q0.975), fill="turquoise") +
   geom_line(data=data.frame(x=dists, y = true_detect), aes(x,y))
 
 
