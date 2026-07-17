@@ -95,7 +95,7 @@ fit
 pred <- predict(
   fit,
   data.frame(distance=dists),
-  ~ spline_spde,
+  ~ spline_detect_func(spline_spde),
   n.samples=1000
 )
 plot(dists, abs(pred$mean.mc_std_err/pred$mean) );abline(h=.05)
