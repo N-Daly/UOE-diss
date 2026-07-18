@@ -82,8 +82,8 @@ model_one_observer_hn <- function(
 
 get_preds_from_one_observer_hn_fit <- function(
     fit,
+    ips,
     dists = seq(0,8, length.out=1000),
-    ips = st_as_sf( readRDS("ips_interiorTransects_3subdivisions.rda") ),
     m = 1000 # MC samples
 ){
   # assumes the detection functions are defined already
@@ -158,8 +158,8 @@ model_one_observer_spline <- function(
 
 get_preds_from_one_observer_spline_fit <- function(
     fit,
+    ips,
     dists = seq(0,8, length.out=1000),
-    ips = st_as_sf( readRDS("ips_interiorTransects_3subdivisions.rda") ),
     m = 1000 # MC samples
 ){
   # assumes the detection functions are defined already
@@ -240,8 +240,8 @@ model_two_observers_hn <- function(
 
 get_preds_from_two_observers_hn_fit <- function(
     fit,
+    ips,
     dists = seq(0,8, length.out=1000),
-    ips = st_as_sf( readRDS("ips_interiorTransects_3subdivisions.rda") ),
     m = 1000 # MC samples
 ){
   # assumes the detection functions are defined already

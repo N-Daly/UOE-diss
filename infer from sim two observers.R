@@ -177,7 +177,7 @@ end <- proc.time()
 print((end-start)[3])
 
 start <- proc.time()
-list_of_models[[1]] <- get_preds_from_one_observer_hn_fit(fit_merged_observers)
+list_of_models[[1]] <- get_preds_from_one_observer_hn_fit(fit_merged_observers, ips)
 end <- proc.time()
 print((end-start)[3])
 
@@ -192,7 +192,7 @@ end <- proc.time()
 print((end-start)[3])
 
 start <- proc.time()
-list_of_models[[2]] <- get_preds_from_two_observers_hn_fit(fit_two_observers)
+list_of_models[[2]] <- get_preds_from_two_observers_hn_fit(fit_two_observers, ips)
 end <- proc.time()
 print((end-start)[3])
 
@@ -207,7 +207,7 @@ end <- proc.time()
 print((end-start)[3])
 
 start <- proc.time()
-list_of_models[[3]] <- get_preds_from_one_observer_spline_fit(fit_one_spline)
+list_of_models[[3]] <- get_preds_from_one_observer_spline_fit(fit_one_spline, ips)
 end <- proc.time()
 print((end-start)[3])
 
@@ -251,7 +251,7 @@ for (i in 1:nsims){
   # Model what A and B saw as a combined observer with a hn detection function
   catt("fitting merged")
   start <- proc.time()
-  fit_merged_observers <- model_one_observer_hn(observed_points, sim_info, matern_prior)
+  fit_merged_observers <- model_one_observer_hn(observed_points, sim_info, matern_prior, ips=ips)
   end <- proc.time()
   print((end-start)[3])
   
@@ -264,7 +264,9 @@ for (i in 1:nsims){
   # Model what A and B saw as a two observer likelihood with hn detection functions
   catt("fitting two")
   start <- proc.time()
-  fit_two_observers <- model_two_observers_hn(observed_points, sim_info, matern_prior)
+  fit_two_observers <- model_two_observers_hn(
+    observed_points, sim_info, matern_prior, ips = ips_with_detection_states
+  )
   end <- proc.time()
   print((end-start)[3])
   
@@ -288,16 +290,13 @@ for (i in 1:nsims){
   end <- proc.time()
   print((end-start)[3])
   
-  catt("comparing the models' scores")
-  start <- proc.time()
+  
   some_results <- get_scoring_differences(
     list_of_models,
     ips,
     true_detect_prob,
     true_loglambda_at_ip
   )
-  end <- proc.time()
-  print((end-start)[3])
   
   #save results early just in case
   results <- rbind(results, some_results)
