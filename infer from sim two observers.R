@@ -225,7 +225,7 @@ set.seed(1234)
 nsims <- 20
 results <- NULL
 # for saving the results
-file_name <- paste(format(Sys.time()), "simulation results.rda")
+file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "simulation results.rda")
 
 for (i in 1:nsims){
   catt("Simulation", i, "of", nsims)
