@@ -42,9 +42,9 @@ sim_info <- simulate_lcgp_distance_thinning(
 dd <- sim_info$samples_df
 
 detect_mesh <- fm_mesh_1d(
-  loc = seq(0,8, by=2), 
+  loc = c(0,2,4,6,8), 
   boundary = c("dirichlet", "free"),
-  degree = 2
+  degree = 1
 )
 
 ips <- st_as_sf( readRDS("ips_interiorTransects_3subdivisions.rda") )
@@ -55,7 +55,7 @@ ips <- st_as_sf( readRDS("ips_interiorTransects_3subdivisions.rda") )
   # make_spatially_varying_mesh(60, sim_info),
   # samplers = sim_info$buffered_transects
 # )
-ips$distance <- dist_to_nearest_line_transect(ips$geometry, sim_info$line_transects)
+# ips$distance <- dist_to_nearest_line_transect(ips$geometry, sim_info$line_transects)
 # saveRDS(ips, file = "ipsFromVaryingMesh60K.rda")
 head(ips)
 ############## model stuff
@@ -87,8 +87,7 @@ fit <- lgcp(
   formula = form,
   data =  dd,
   ips=ips,
-  options = list(bru_verbose= 1
-  )
+  options = list(bru_verbose= 1)
 )
 fit
 
@@ -98,7 +97,15 @@ pred <- predict(
   ~ spline_detect_func(spline_spde),
   n.samples=1000
 )
-plot(dists, abs(pred$mean.mc_std_err/pred$mean) );abline(h=.05)
+
+# sanity check we sampled enough
+mc_err_precent <- abs(pred$mean.mc_std_err/pred$mean)
+plot(
+  dists, mc_err_precent,
+  ylim = range(0.05, mc_err_precent, finite=T),
+  main = "MC error on the prediction mean as %"  
+)
+abline(h=.05, col="red")
 
 
 cmp2 <- ~ Intercept(1) +
@@ -127,8 +134,20 @@ pred2 <- predict(
   fit2,
   data.frame(distance=dists),
   ~ hn(distance, sigma),
-  n.samples = 100
-)$mean
+  n.samples = 1000
+)
+
+#sanity checking
+mc_err_precent <- abs(pred2$mean.mc_std_err/pred2$mean)
+plot(
+  dists, mc_err_precent,
+  ylim = range(0.05, mc_err_precent, finite=T),
+  main = "MC error on the prediction mean as %"  
+)
+abline(h=.05, col="red")
+
+
+## compare the two models' estimates of the detection probability
 
 true_detect <- detect_func_2observer_sigma(dists, sigmaA, sigmaB)
 plot(
@@ -142,13 +161,17 @@ lines(
   lwd=2
 )
 lines(
-  dists, pred2, 
+  dists, pred2$mean, 
   lwd=2, col = "blue"
 )
 rug(dist_to_nearest_line_transect(dd$geometry))
 
 ggplot(NULL) + 
   geom_ribbon(data = pred, aes(x=distance, y=mean, ymin = q0.025, ymax=q0.975), fill="turquoise") +
-  geom_line(data=data.frame(x=dists, y = true_detect), aes(x,y))
+  geom_line(data=data.frame(x=dists, y = true_detect), aes(x,y)) +
+  labs(
+    title="shaded region is posterior 95% credible interval for detection probability",
+    y = "Probability"
+    )
 
 
