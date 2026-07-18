@@ -9,8 +9,7 @@ library(units)
 
 dist_to_nearest_line_transect <- function(pts, transects=sim_info$line_transects){
   
-  # cat("nearest sampler", class(pts), "\t")
-  # this should be in kilometres
+  # this should be in kilometres as the crs is in km units
   distance_to_each_transect <- st_distance(pts, transects)
   #distance to nearest line transect
   d <- apply(distance_to_each_transect, 1, min)
@@ -26,8 +25,6 @@ dist_to_nearest_line_transect <- function(pts, transects=sim_info$line_transects
   }
   
   d 
-  #  preserving the same units causes issues with exponentiation later
-  # as_units(dd, units(distance_to_each_transect))
 }
 
 
@@ -54,45 +51,23 @@ simulate_lcgp <- function(
     alpha = true_alpha, rho = true_rho,
     sigma = true_sigma_GRF
   )
-  # cat("sampling underlying lgcp \n ")
-  
+
   # ln lambda = beta0 + grf
   log_lambda <- true_beta0 + grf_samples
 
   # sample the count process, given the intensity, only in the observable regions 
-  # s <- Sys.time()
   samples_df <- sample.lgcp(
     mesh1,
     log_lambda,
     samplers = polygon_transects
   )
-  # e <- Sys.time()
-  # print(e-s)
-  # cat("sampled point process \n")
+
   
   #creating the distance covariate
   samples_df$distance <- dist_to_nearest_line_transect(samples_df$geometry, line_transects)
   
-  # calculate the true intensity within the boundary of the study region
-  
-  # get the nodes within the (closed) study region 
-  vertices <- fm_vertices(mesh1, "sf")
-  within_study_region <- st_intersects(vertices, boundary, sparse=F)
-  
-  interior_vertices <- vertices[within_study_region, ]
-  # the intensities were evaluated at the nodes so this is safe
-  log_lambda <- log_lambda[within_study_region]
-  
-  # the integration scheme within the boundary consists of the interior vertices/nodes
-  # so the terms in this sum "line up"
-  interior_ips <- fm_int( mesh1, boundary )
-  overall_lambda = sum(interior_ips$weight * exp(log_lambda) )
-  
   list(
-    overall_lambda = overall_lambda,
     log_lambda = log_lambda,
-    interior_vertices = interior_vertices,
-    interior_ips = interior_ips,
     samples_df = samples_df,
     true_abundance = nrow(samples_df),
     the_mesh = mesh1,
