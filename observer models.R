@@ -90,6 +90,113 @@ model_one_observer_hn <- function(
   fit
 }
 
+get_preds_from_one_observer_hn_fit <- function(
+    fit,
+    dists = seq(0,8, length.out=1000),
+    ips = st_as_sf( readRDS("ips_interiorTransects_3subdivisions.rda") ),
+    m = 1000 # MC samples
+){
+  # assumes the detection functions are defined already
+  
+  # log lambda and lambda
+  lst <- predict(
+    fit,
+    data.frame(geometry = ips$geometry),
+    formula = ~ list(
+        pred_lambda = exp(Intercept + spde),
+        pred_loglambda = Intercept + spde
+    ),
+    n.samples = m
+  )
+  
+  # detection prob
+  lst$pred_detect <- predict(
+    fit,
+    data.frame(distance=dists),
+    formula = ~ hn(distance, sigma),
+    n.samples = m
+  )
+  
+  lst$name <- deparse(substitute(fit))
+  lst
+}
+
+model_one_observer_spline <- function(
+    dd,
+    construction_info,
+    mtrn_prior = matern_prior,
+    mtrn_detect_prior = detect_matern,
+    half_width = 8,
+    ips = st_as_sf( readRDS("ips_interiorTransects_3subdivisions.rda") )
+){
+  
+  
+  matern_prior = mtrn_prior
+  # matern_prior <- inla.spde2.pcmatern(
+  #   sim_info$the_mesh,
+  #   prior.range = c(600, 0.1), # true rho is 500
+  #   prior.sigma = c(.5, 0.5)   # true sigma is 1
+  # )
+  
+  detect_matern = mtrn_detect_prior
+  # # alpha=2, rho=2, sigma=.25
+  # detect_matern <- inla.spde2.pcmatern(
+  #   detect_mesh,
+  #   alpha = 2,
+  #   prior.range = c(2, 0.99), # P(rho < val) = alpha
+  #   prior.sigma = c(0.25, 0.01) # P(sigma > val) = alpha
+  # )
+  
+  cmp <- ~ Intercept(1) +
+    spline_spde(main=distance, model=detect_matern) +
+    typical_spde(main=geometry, model=matern_prior)
+  
+  form <- geometry  ~ Intercept  + typical_spde +
+    ln_spline_detect_func(spline_spde)
+  
+  
+  fit <- lgcp(
+    components = cmp,
+    formula = form,
+    data =  dd,
+    ips=ips,
+    options = list(bru_verbose= 1)
+  )
+  fit
+  
+}
+
+get_preds_from_one_observer_spline_fit <- function(
+    fit,
+    dists = seq(0,8, length.out=1000),
+    ips = st_as_sf( readRDS("ips_interiorTransects_3subdivisions.rda") ),
+    m = 1000 # MC samples
+){
+  # assumes the detection functions are defined already
+  
+  # log lambda and lambda
+  lst <- predict(
+    fit,
+    data.frame(geometry = ips$geometry),
+    formula = ~ list(
+      pred_lambda = exp(Intercept  + typical_spde),
+      pred_loglambda = Intercept  + typical_spde
+    ),
+    n.samples = m
+  )
+  
+  # detection prob
+  lst$pred_detect <- predict(
+    fit,
+    data.frame(distance = dists),
+    formula = ~ spline_detect_func(spline_spde),
+    n.samples = m
+  )
+  
+  lst$name <- deparse(substitute(fit))
+  lst
+}
+
 
 model_two_observers_hn <- function(
   dd, 
@@ -150,3 +257,38 @@ model_two_observers_hn <- function(
   
   fit_two_observers
 }
+
+
+get_preds_from_two_observers_hn_fit <- function(
+    fit,
+    dists = seq(0,8, length.out=1000),
+    ips = st_as_sf( readRDS("ips_interiorTransects_3subdivisions.rda") ),
+    m = 1000 # MC samples
+){
+  # assumes the detection functions are defined already
+  
+  # log lambda and lambda
+  lst <- predict(
+    fit,
+    data.frame(geometry = ips$geometry),
+    formula = ~ list(
+      pred_lambda = exp(Intercept + spde),
+      pred_loglambda = Intercept + spde
+    ),
+    n.samples = m
+  )
+  
+  # detection prob
+  lst$pred_detect <- predict(
+    fit,
+    data.frame(distance = dists),
+    formula = ~ detect_func_2observer_sigma(distance, sigmaA, sigmaB),
+    n.samples = m
+  )
+  
+  lst$name <- deparse(substitute(fit))
+  lst
+}
+
+
+
