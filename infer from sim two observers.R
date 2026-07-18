@@ -151,7 +151,15 @@ detect_matern <- inla.spde2.pcmatern(
 
 dists <- seq(0,8, length.out=1000)
 
-ips <- st_as_sf( readRDS("ips_interiorTransects_3subdivisions.rda") )
+ips <- st_as_sf( readRDS("ips_interiorTransects_2subdivisions.rda") )
+# so the one observer models have only a geometry dimension
+# the two observer model needs a detection state dimension - who spotted the animal
+# here i naively expand the existing ips uniformly across this dimension
+# fingers crossed
+ips_with_detection_states <- ips[rep(1:nrow(ips), each=3),]
+ips_with_detection_states$detected <- rep(1:3, times=nrow(ips))
+ips_with_detection_states$weight = ips_with_detection_states$weight/3
+
 
 # for model scoring later
 true_detect_prob = detect_func_2observer_sigma(dists, true_sigmaA, true_sigmaB)
@@ -164,7 +172,7 @@ list_of_models <- list()
 # Model what A and B saw as a combined observer with a hn detection function
 catt("fitting merged")
 start <- proc.time()
-fit_merged_observers <- model_one_observer_hn(observed_points, sim_info, matern_prior)
+fit_merged_observers <- model_one_observer_hn(observed_points, sim_info, matern_prior, ips=ips)
 end <- proc.time()
 print((end-start)[3])
 
@@ -177,7 +185,9 @@ print((end-start)[3])
 # Model what A and B saw as a two observer likelihood with hn detection functions
 catt("fitting two")
 start <- proc.time()
-fit_two_observers <- model_two_observers_hn(observed_points, sim_info, matern_prior)
+fit_two_observers <- model_two_observers_hn(
+  observed_points, sim_info, matern_prior, ips = ips_with_detection_states
+)
 end <- proc.time()
 print((end-start)[3])
 
@@ -201,24 +211,29 @@ list_of_models[[3]] <- get_preds_from_one_observer_spline_fit(fit_one_spline)
 end <- proc.time()
 print((end-start)[3])
 
-catt("comparing the models' scores")
-start <- proc.time()
-results <- get_scoring_differences(
+
+initial_results <- get_scoring_differences(
   list_of_models,
   ips,
   true_detect_prob,
   true_loglambda_at_ip
 )
-end <- proc.time()
-print((end-start)[3])
-results
+initial_results
 
+############## Repeated simulations
 set.seed(1234)
 nsims <- 2
 results <- NULL
+# for saving the results
+timestamp <- format(Sys.Date())
+file_name <- paste(timestamp, "simulation results.rda")
 
 for (i in 1:nsims){
   catt("Simulation", i, "of", nsims)
+  
+  # need to save space and these model fits are large
+  rm(list_of_models, fit_merged_observers, fit_two_observers, fit_one_spline)
+  invisible(gc())
 
   # simulate a ground truth
   sim_info <- simulate_lcgp_distance_thinning(
@@ -231,6 +246,7 @@ for (i in 1:nsims){
 
   #the sampled points are in observed_points
   observed_points <- sim_info$samples_df
+  list_of_models = list()
 
   # Model what A and B saw as a combined observer with a hn detection function
   catt("fitting merged")
@@ -283,16 +299,15 @@ for (i in 1:nsims){
   end <- proc.time()
   print((end-start)[3])
   
+  #save results early just in case
   results <- rbind(results, some_results)
+  # wrangling with classes
+  results$model <- as.character(results$model)
+  results[-5] <- apply(results[-5], 2, as.numeric)
+  
+  saveRDS(results, file=file_name)
 }
-# wrangling with classes
-results$model <- as.character(results$model)
-results[-5] <- apply(results[-5], 2, as.numeric)
 
-# save the results
-timestamp <- format(Sys.Date())
-file_name <- paste(timestamp, "simulation results.rda")
-saveRDS(results, file=file_name)
 
 
 # plot the difference in scores, a difference of zero implies the models perform the same wrt to that score
