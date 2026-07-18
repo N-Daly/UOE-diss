@@ -1,11 +1,11 @@
-rm(list=ls());while(dev.cur()>1){dev.off()};old_par<- par(no.readonly = T, pch=19);options(digits=3)
+rm(list=ls());while(dev.cur()>1){dev.off()};old_par<- par(no.readonly = T, pch=19);options(digits=3);invisible(gc())
 
 library(INLA)
 library(inlabru)
 library(sf)
 library(fmesher)
 library(ggplot2)
-library("patchwork")
+library(patchwork)
 
 my_dir <- r"(C:\Users\ND\OneDrive - University of Edinburgh\Dissertation\UOE-diss)"
 setwd(my_dir)
@@ -38,7 +38,8 @@ log_g_2observer <- function(distance, detected, sigmaA, sigmaB, eps=1e-6){
   log_terms
 }
 
-
+spline_detect_func <- function(spline_effect){ exp(-spline_effect) }
+ln_spline_detect_func <- function(spline_effect){ -spline_effect }
 
 ####### the probability of detection at a given distance
 
@@ -54,7 +55,6 @@ detect_func_2observer_sigma <- function(distance, sigmaA, sigmaB){
 
 ######## functions for assessing model fit 
 
-
 dawid_sebastiani_score <- function(post_pred, true_value){
   E <- post_pred$mean
   # i am not sure if this step is correct
@@ -64,90 +64,54 @@ dawid_sebastiani_score <- function(post_pred, true_value){
 
 
 get_scoring_differences <- function(
-    sim_info, fit_merged_observers, fit_two_observers,
-    true_detect_prob = detect_func_2observer_sigma(dists, true_sigmaA, true_sigmaB),
-    dists = seq(0,8, length.out=1000)
+  models,
+  ips,
+  true_detect,
+  true_loglambda
 ){
-  #for brevity
-  loglambda <- sim_info$log_lambda
+  base_mod <- models[[1]] # should always be the one observer hn
   
-  #both models predict log lambda, lambda, and the probability of (any) detection
-  # squeezing these all into one predict call so it'll hopefully be faster
-  merged_observer_pred <- predict(
-    fit_merged_observers, 
-    newdata = list(
-      geometry=sim_info$interior_vertices$geometry,
-      dists=dists
-    ),
-    formula = ~ {
-      list(
-        lambda = exp(Intercept + spde),
-        log_lambda = Intercept + spde,
-        detection = hn(dists, sigma)
-      )
-    },
-    n.samples=2000,
-  )
-  # different detection prob function for two observer model
-  two_observers_pred <- predict(
-    fit_two_observers, 
-    newdata = list(
-      geometry=sim_info$interior_vertices$geometry,
-      dists=dists
-    ),
-    formula = ~ {
-      list(
-        lambda = exp(Intercept + spde),
-        log_lambda = Intercept + spde,
-        detection = detect_func_2observer_sigma(dists, sigmaA, sigmaB)
-      )
-    },
-    n.samples=2000
-  )
+  # get the scores of this base model
+  base_mod$DS <- dawid_sebastiani_score(base_mod$pred_loglambda, true_loglambda)
   
-  # DS scores on log lambda at vertices
-  merged_observers_DS <- dawid_sebastiani_score(merged_observer_pred$log_lambda, loglambda)
-  two_observers_DS <- dawid_sebastiani_score(two_observers_pred$log_lambda, loglambda)
-  # integrated DS score difference over the study region
-  integrated_DS_difference <- sum( sim_info$interior_ips$weight * (merged_observers_DS - two_observers_DS) )
+  base_mod$loglambda_SE <- (base_mod$pred_loglambda$mean - true_loglambda)^2
   
-  # MSE scores on the posterior mean for log lambda
-  merged_observers_MSE <- mean(merged_observer_pred$log_lambda$mean - loglambda)
-  two_observers_MSE <- mean(two_observers_pred$log_lambda$mean - loglambda)
+  base_mod$lambda_AE <- abs(base_mod$pred_lambda$median - true_loglambda)
   
-  # MAE scores on the posterior median for lambda
-  merged_observers_MAE <- mean(abs( merged_observer_pred$lambda$median - exp(loglambda) )) 
-  two_observers_MAE <- mean(abs( two_observers_pred$lambda$median - exp(loglambda) )) 
+  base_mod$detect_AE <- abs(base_mod$pred_detect$median - true_detect)
   
-  # MAE errors on the posterior mean detection probability
-  merged_observers_detect_MAE <- mean(abs( merged_observer_pred$detection$mean - true_detect_prob ))
-  two_observers_detection_MAE <- mean(abs( two_observers_pred$detection$mean - true_detect_prob ))
+  score_diffs <- NULL
+  for (i in 2:length(models)){
+    mod <- models[[i]]
+    
+    #get this model' scores 
+    mod$DS <- dawid_sebastiani_score(mod$pred_loglambda, true_loglambda)
+    mod$loglambda_SE <- (mod$pred_loglambda$mean - true_loglambda)^2
+    mod$lambda_AE <- abs(mod$pred_lambda$median - true_loglambda)
+    mod$detect_AE <- abs(mod$pred_detect$median - true_detect)
+    
+    # now take the difference in scores between this and the base
+    # and integrate it over the domain
+    mod_diff <- list(
+      DS = sum(ips$weight * (base_mod$DS - mod$DS)),
+      loglambda_SE = sum(ips$weight * (base_mod$loglambda_SE - mod$loglambda_SE)),
+      lambda_AE = sum(ips$weight * (base_mod$lambda_AE - mod$lambda_AE)),
+      detect_AE = mean(base_mod$detect_AE - mod$detect_AE)
+    )
+    
+    mod_diff$model <- mod$name
+    
+    score_diffs <- rbind(score_diffs, mod_diff)
+  }
   
-  #report the differences in scores relative to a single merged observer model
-  list(
-    DS = integrated_DS_difference,
-    MSE =  merged_observers_MSE - two_observers_MSE,
-    MAE = merged_observers_MAE - two_observers_MAE,
-    MAE_detection = merged_observers_detect_MAE - two_observers_detection_MAE
-  )
+  as.data.frame(score_diffs, row.names = F)
 }
+
+
 
 ########### simulate the ground truth
 
 true_sigmaA <- 4; true_sigmaB <- 2; true_range <- 500; true_sigma_grf <- 1
-
-
-############## modelling
-
-######## set up before modelling
-matern_prior <- inla.spde2.pcmatern(
-  mexdolphin_sf$mesh,
-  prior.range = c(600, 0.1), # true rho is 500
-  prior.sigma = c(.5, 0.5)   # true sigma is 1
-)
-
-dists <- seq(0,8, length.out=1000)
-
 
 set.seed(800)
 # simulate a ground truth
@@ -162,26 +126,95 @@ sim_info <- simulate_lcgp_distance_thinning(
 #the sampled points are in observed_points
 observed_points <- sim_info$samples_df
 
-# Model what A and B saw as a combined observer
+############## modelling
+
+######## set up before modelling
+matern_prior <- inla.spde2.pcmatern(
+  mexdolphin_sf$mesh,
+  prior.range = c(600, 0.1), # true rho is 500
+  prior.sigma = c(.5, 0.5)   # true sigma is 1
+)
+
+detect_mesh <- fm_mesh_1d(
+  loc = c(0,2,4,6,8), 
+  boundary = c("dirichlet", "free"),
+  degree = 1
+)
+
+# alpha=2, rho=2, sigma=.25
+detect_matern <- inla.spde2.pcmatern(
+  detect_mesh,
+  alpha = 2,
+  prior.range = c(2, 0.99), # P(rho < val) = alpha
+  prior.sigma = c(0.25, 0.01) # P(sigma > val) = alpha
+)
+
+dists <- seq(0,8, length.out=1000)
+
+ips <- st_as_sf( readRDS("ips_interiorTransects_3subdivisions.rda") )
+
+# for model scoring later
+true_detect_prob = detect_func_2observer_sigma(dists, true_sigmaA, true_sigmaB)
+true_loglambda_at_ip <- c( fm_evaluate(sim_info$the_mesh, field = sim_info$log_lambda, loc = ips$geometry) )
+list_of_models <- list()
+
+
+######## fitting models
+
+# Model what A and B saw as a combined observer with a hn detection function
 catt("fitting merged")
 start <- proc.time()
 fit_merged_observers <- model_one_observer_hn(observed_points, sim_info, matern_prior)
 end <- proc.time()
 print((end-start)[3])
 
-# Model what A and B saw as a two observer likelihood
+start <- proc.time()
+list_of_models[[1]] <- get_preds_from_one_observer_hn_fit(fit_merged_observers)
+end <- proc.time()
+print((end-start)[3])
+
+
+# Model what A and B saw as a two observer likelihood with hn detection functions
 catt("fitting two")
 start <- proc.time()
 fit_two_observers <- model_two_observers_hn(observed_points, sim_info, matern_prior)
 end <- proc.time()
 print((end-start)[3])
 
-get_scoring_differences(sim_info, fit_merged_observers, fit_two_observers)
+start <- proc.time()
+list_of_models[[2]] <- get_preds_from_two_observers_hn_fit(fit_two_observers)
+end <- proc.time()
+print((end-start)[3])
 
 
+# Model what A and B saw as a combined observer with a spline(like) detection function
+catt("fitting spline")
+start <- proc.time()
+fit_one_spline <- model_one_observer_spline(
+  observed_points, sim_info, matern_prior, detect_matern, ips=ips
+)
+end <- proc.time()
+print((end-start)[3])
+
+start <- proc.time()
+list_of_models[[3]] <- get_preds_from_one_observer_spline_fit(fit_one_spline)
+end <- proc.time()
+print((end-start)[3])
+
+catt("comparing the models' scores")
+start <- proc.time()
+results <- get_scoring_differences(
+  list_of_models,
+  ips,
+  true_detect_prob,
+  true_loglambda_at_ip
+)
+end <- proc.time()
+print((end-start)[3])
+results
 
 set.seed(1234)
-nsims <- 20
+nsims <- 2
 results <- NULL
 
 for (i in 1:nsims){
@@ -199,51 +232,81 @@ for (i in 1:nsims){
   #the sampled points are in observed_points
   observed_points <- sim_info$samples_df
 
-  # Model what A and B saw as a combined observer
+  # Model what A and B saw as a combined observer with a hn detection function
   catt("fitting merged")
   start <- proc.time()
   fit_merged_observers <- model_one_observer_hn(observed_points, sim_info, matern_prior)
   end <- proc.time()
   print((end-start)[3])
-
-  # Model what A and B saw as a two observer likelihood
+  
+  start <- proc.time()
+  list_of_models[[1]] <- get_preds_from_one_observer_hn_fit(fit_merged_observers)
+  end <- proc.time()
+  print((end-start)[3])
+  
+  
+  # Model what A and B saw as a two observer likelihood with hn detection functions
   catt("fitting two")
   start <- proc.time()
   fit_two_observers <- model_two_observers_hn(observed_points, sim_info, matern_prior)
   end <- proc.time()
   print((end-start)[3])
-
-  catt("comparing the two")
+  
   start <- proc.time()
-  results <- rbind(
-    results, get_scoring_differences(sim_info, fit_merged_observers, fit_two_observers)
+  list_of_models[[2]] <- get_preds_from_two_observers_hn_fit(fit_two_observers)
+  end <- proc.time()
+  print((end-start)[3])
+  
+  
+  # Model what A and B saw as a combined observer with a spline(like) detection function
+  catt("fitting spline")
+  start <- proc.time()
+  fit_one_spline <- model_one_observer_spline(
+    observed_points, sim_info, matern_prior, detect_matern, ips=ips
   )
   end <- proc.time()
   print((end-start)[3])
+  
+  start <- proc.time()
+  list_of_models[[3]] <- get_preds_from_one_observer_spline_fit(fit_one_spline)
+  end <- proc.time()
+  print((end-start)[3])
+  
+  catt("comparing the models' scores")
+  start <- proc.time()
+  some_results <- get_scoring_differences(
+    list_of_models,
+    ips,
+    true_detect_prob,
+    true_loglambda_at_ip
+  )
+  end <- proc.time()
+  print((end-start)[3])
+  
+  results <- rbind(results, some_results)
 }
-(results <- as.data.frame( apply(results, 2, as.numeric) ) )
+# wrangling with classes
+results$model <- as.character(results$model)
+results[-5] <- apply(results[-5], 2, as.numeric)
 
 # save the results
-saveRDS(results, file="sat-4-07-score-results.rda")
+timestamp <- format(Sys.Date())
+file_name <- paste(timestamp, "simulation results.rda")
+saveRDS(results, file=file_name)
 
 
 # plot the difference in scores, a difference of zero implies the models perform the same wrt to that score
 # all scores are negatively orientated so a positive difference means the simpler merged observer model
 # performed worse
 
-g <- ggplot(results) + expand_limits(y=0) +  geom_abline(intercept = 0, slope = 0, colour="red", linewidth=2)
+g <- ggplot(results, aes(fill=model)) + expand_limits(y=0) +  geom_abline(intercept = 0, slope = 0, colour="red", linewidth=2)
 
 dsp <-g + geom_boxplot(aes(y=DS)) + labs(title="integrated DS on log lambda")
-msep <- g + geom_boxplot(aes(y=MSE)) + labs(title="integrated MSE on mean log lambda")
-maep <- g + geom_boxplot(aes(y=MAE)) + labs(title = "integrated MAE on median lambda")
-maedetectp <- g + geom_boxplot(aes(y=MAE_detection)) + labs(title="MAE on detection prob") 
+msep <- g + geom_boxplot(aes(y=loglambda_SE)) + labs(title="integrated SE on mean log lambda")
+maep <- g + geom_boxplot(aes(y=lambda_AE)) + labs(title = "integrated AE on median lambda")
+maedetectp <- g + geom_boxplot(aes(y=detect_AE)) + labs(title="mean AE on detection prob")
 
 (dsp + msep) / ( maep + maedetectp)
-
-
-
-
-
 
 
 
