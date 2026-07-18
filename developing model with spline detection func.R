@@ -75,10 +75,10 @@ detect_matern <- inla.spde2.pcmatern(
 )
 
 cmp <- ~ Intercept(1) +
-  spline_spde(main=distance, model=detect_matern) #+
-  # typical_spde(main=geometry, model=matern_prior)
+  spline_spde(main=distance, model=detect_matern) +
+  typical_spde(main=geometry, model=matern_prior)
 
-form <- geometry  ~ Intercept  + #typical_spde +
+form <- geometry  ~ Intercept  + typical_spde +
   ln_spline_detect_func(spline_spde)
 
 
@@ -172,6 +172,6 @@ ggplot(NULL) +
   labs(
     title="shaded region is posterior 95% credible interval for detection probability",
     y = "Probability"
-    )
+  )
 
 
