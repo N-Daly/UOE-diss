@@ -169,64 +169,63 @@ list_of_models <- list()
 
 ######## fitting models
 
-# Model what A and B saw as a combined observer with a hn detection function
-catt("fitting merged")
-start <- proc.time()
-fit_merged_observers <- model_one_observer_hn(observed_points, sim_info, matern_prior, ips=ips)
-end <- proc.time()
-print((end-start)[3])
-
-start <- proc.time()
-list_of_models[[1]] <- get_preds_from_one_observer_hn_fit(fit_merged_observers, ips)
-end <- proc.time()
-print((end-start)[3])
-
-
-# Model what A and B saw as a two observer likelihood with hn detection functions
-catt("fitting two")
-start <- proc.time()
-fit_two_observers <- model_two_observers_hn(
-  observed_points, sim_info, matern_prior, ips = ips_with_detection_states
-)
-end <- proc.time()
-print((end-start)[3])
-
-start <- proc.time()
-list_of_models[[2]] <- get_preds_from_two_observers_hn_fit(fit_two_observers, ips)
-end <- proc.time()
-print((end-start)[3])
-
-
-# Model what A and B saw as a combined observer with a spline(like) detection function
-catt("fitting spline")
-start <- proc.time()
-fit_one_spline <- model_one_observer_spline(
-  observed_points, sim_info, matern_prior, detect_matern, ips=ips
-)
-end <- proc.time()
-print((end-start)[3])
-
-start <- proc.time()
-list_of_models[[3]] <- get_preds_from_one_observer_spline_fit(fit_one_spline, ips)
-end <- proc.time()
-print((end-start)[3])
-
-
-initial_results <- get_scoring_differences(
-  list_of_models,
-  ips,
-  true_detect_prob,
-  true_loglambda_at_ip
-)
-initial_results
+# # Model what A and B saw as a combined observer with a hn detection function
+# catt("fitting merged")
+# start <- proc.time()
+# fit_merged_observers <- model_one_observer_hn(observed_points, sim_info, matern_prior, ips=ips)
+# end <- proc.time()
+# print((end-start)[3])
+# 
+# start <- proc.time()
+# list_of_models[[1]] <- get_preds_from_one_observer_hn_fit(fit_merged_observers, ips)
+# end <- proc.time()
+# print((end-start)[3])
+# 
+# 
+# # Model what A and B saw as a two observer likelihood with hn detection functions
+# catt("fitting two")
+# start <- proc.time()
+# fit_two_observers <- model_two_observers_hn(
+#   observed_points, sim_info, matern_prior, ips = ips_with_detection_states
+# )
+# end <- proc.time()
+# print((end-start)[3])
+# 
+# start <- proc.time()
+# list_of_models[[2]] <- get_preds_from_two_observers_hn_fit(fit_two_observers, ips)
+# end <- proc.time()
+# print((end-start)[3])
+# 
+# 
+# # Model what A and B saw as a combined observer with a spline(like) detection function
+# catt("fitting spline")
+# start <- proc.time()
+# fit_one_spline <- model_one_observer_spline(
+#   observed_points, sim_info, matern_prior, detect_matern, ips=ips
+# )
+# end <- proc.time()
+# print((end-start)[3])
+# 
+# start <- proc.time()
+# list_of_models[[3]] <- get_preds_from_one_observer_spline_fit(fit_one_spline, ips)
+# end <- proc.time()
+# print((end-start)[3])
+# 
+# 
+# initial_results <- get_scoring_differences(
+#   list_of_models,
+#   ips,
+#   true_detect_prob,
+#   true_loglambda_at_ip
+# )
+# initial_results
 
 ############## Repeated simulations
 set.seed(1234)
-nsims <- 2
+nsims <- 20
 results <- NULL
 # for saving the results
-timestamp <- format(Sys.Date())
-file_name <- paste(timestamp, "simulation results.rda")
+file_name <- paste(format(Sys.time()), "simulation results.rda")
 
 for (i in 1:nsims){
   catt("Simulation", i, "of", nsims)
@@ -256,7 +255,7 @@ for (i in 1:nsims){
   print((end-start)[3])
   
   start <- proc.time()
-  list_of_models[[1]] <- get_preds_from_one_observer_hn_fit(fit_merged_observers)
+  list_of_models[[1]] <- get_preds_from_one_observer_hn_fit(fit_merged_observers, ips)
   end <- proc.time()
   print((end-start)[3])
   
@@ -271,7 +270,7 @@ for (i in 1:nsims){
   print((end-start)[3])
   
   start <- proc.time()
-  list_of_models[[2]] <- get_preds_from_two_observers_hn_fit(fit_two_observers)
+  list_of_models[[2]] <- get_preds_from_two_observers_hn_fit(fit_two_observers, ips)
   end <- proc.time()
   print((end-start)[3])
   
@@ -286,7 +285,7 @@ for (i in 1:nsims){
   print((end-start)[3])
   
   start <- proc.time()
-  list_of_models[[3]] <- get_preds_from_one_observer_spline_fit(fit_one_spline)
+  list_of_models[[3]] <- get_preds_from_one_observer_spline_fit(fit_one_spline, ips)
   end <- proc.time()
   print((end-start)[3])
   
@@ -306,7 +305,6 @@ for (i in 1:nsims){
   
   saveRDS(results, file=file_name)
 }
-
 
 
 # plot the difference in scores, a difference of zero implies the models perform the same wrt to that score
