@@ -99,7 +99,7 @@ sample_detect_funcs_and_plot <- function(
 set.seed(123)
 sample_detect_funcs_and_plot(
   nreps=100,
-  alpha=2, rho=2, sigma=.25
+  alpha=2, rho=3, sigma=.25
 )
 
 
