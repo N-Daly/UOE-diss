@@ -38,9 +38,10 @@ make_spatially_varying_mesh <- function(num_vertices, sim_info){
 model_one_observer_hn <- function(
     dd, 
     construction_info, # for the mesh, buffered transects and so on
-    ips =  st_as_sf( readRDS("ips_interiorTransects_3subdivisions.rda") ),
+    ips,
     mtrn_prior =matern_prior,
-    half_width=8
+    half_width=8,
+    bru_verbose = 0
 ){
 
   #assuming hn, log_hn, dist_to_nearest_line_transect are defined globally
@@ -71,7 +72,7 @@ model_one_observer_hn <- function(
     formula = form,
     data =  dd,
     ips = ips,
-    options = list(bru_verbose= 0,
+    options = list(bru_verbose= bru_verbose,
                    # verbose = 4,
                    bru_initial = list(sigma = half_width/4) # need to review this 
     )
@@ -114,10 +115,11 @@ get_preds_from_one_observer_hn_fit <- function(
 model_one_observer_spline <- function(
     dd,
     construction_info,
+    ips,
     mtrn_prior = matern_prior,
     mtrn_detect_prior = detect_matern,
     half_width = 8,
-    ips = st_as_sf( readRDS("ips_interiorTransects_3subdivisions.rda") )
+    bru_verbose = 0
 ){
   
   
@@ -150,7 +152,7 @@ model_one_observer_spline <- function(
     formula = form,
     data =  dd,
     ips=ips,
-    options = list(bru_verbose= 0)
+    options = list(bru_verbose= bru_verbose)
   )
   fit
   
@@ -193,7 +195,8 @@ model_two_observers_hn <- function(
   construction_info, # for the mesh, buffered transects and other info
   ips,
   mtrn_prior = matern_prior, # save memory
-  half_width = 8
+  half_width = 8,
+  bru_verbose = 0
 ){
 
   matern_prior <- mtrn_prior
@@ -228,7 +231,7 @@ model_two_observers_hn <- function(
     formula = form,
     data =  dd,
     ips = ips,
-    options = list(bru_verbose= 0,
+    options = list(bru_verbose= bru_verbose,
                    # verbose = 4,
                    bru_initial = list(sigmaA = half_width/4, sigmaB = half_width/4) # need to review this
     )
