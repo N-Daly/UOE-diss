@@ -231,6 +231,36 @@ make_spatially_varying_mesh2 <- function(param, transects){
   }
 }
 
+
+make_spatially_varying_mesh3 <- function(line_transects, subdivisions=0){
+  
+  # buffer the transects a bit farther than the halfwidth
+  bt <- st_buffer(line_transects, 8*1.25)
+  
+  # make a fine lattice within the transect segments
+  hex_points <- fm_hexagon_lattice(bt, edge_len = 1.5)
+  
+  # make a coarse lattice over the whole region to attempt to keep regularity
+  extra_hex_points <- fm_hexagon_lattice(mexdolphin_sf$ppoly, edge_len = 20)
+  
+  # combine the two as seed points
+  seed_points <- c(hex_points, extra_hex_points)
+  
+  # make a relatively simple mesh from the lattices' points
+  mm <- fm_mesh_2d(
+    loc=seed_points,
+    min.angle = 27,
+    crs = fm_crs(line_transects)
+  )
+  
+  if (subdivisions ==0){
+    mm
+  } else {
+    fm_subdivide(mm, n = subdivisions)
+  }
+}
+
+
 #c(100, 50, 30, 25, 20) 
 fit_time <- NULL
 param <- NULL
