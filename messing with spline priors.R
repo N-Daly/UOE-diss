@@ -1,4 +1,4 @@
-rm(list=ls());while(dev.cur()>1){dev.off()};old_par<- par(no.readonly = T, pch=19)
+# rm(list=ls());while(dev.cur()>1){dev.off()};old_par<- par(no.readonly = T, pch=19)
 
 library(INLA)
 library(inlabru)
@@ -22,7 +22,7 @@ mesh <- fm_mesh_1d(
 )
 projector <- fm_evaluator(mesh, loc=dists_grid)
 
-ggplot() + geom_fm(data= mesh)
+# ggplot() + geom_fm(data= mesh)
 
 plot_the_variance <- function(
     the_mesh=mesh, distance=dists_grid,
@@ -95,33 +95,84 @@ sample_detect_funcs_and_plot <- function(
   #samples
 }
 
+alpha=2; rho=2; sigma=1.5
+
 
 set.seed(123)
 sample_detect_funcs_and_plot(
   nreps=100,
-  alpha=2, rho=3, sigma=.25
+  alpha=alpha, rho=rho, sigma=sigma
+)
+# 
+# 
+# plot_the_variance(
+#   mesh,
+#   alpha=alpha, rho=rho, sigma=sigma
+# )
+
+
+##############
+# some data
+
+hn <- function(distance, sigma){  exp(-0.5 * (distance/sigma)^2 )  }
+
+dists <- seq(0, 8, length.out=1000)
+
+set.seed(123)
+toy_data <- sample(dists, 100, replace=T)
+
+sigmaA <- 2; sigmaB <- 4
+
+pA <- hn(toy_data, sigmaA); pB <- hn(toy_data, sigmaB)
+# detected
+ii <- (runif(length(toy_data)) <= pA) | (runif(length(toy_data)) <= pB)
+toy_data <- data.frame(distance = toy_data[ii])
+
+
+############# bru model
+dof <- fm_dof(mesh)
+detect_spde <- inla.spde2.pcmatern(
+  mesh,
+  prior.range = c(rho, 0.9), # P(rho < val) = p0
+  prior.sigma = c(sigma, 0.2), # P(sigma > val) = p0
+  extraconstr = list(
+    A=matrix(c(1, rep(0, dof-1) ), 1, dof),
+    e = matrix(0, 1, 1)
+  )
+)
+
+cmp <- ~ spline_effect(main=distance, model=detect_spde) +
+  Intercept(1)
+
+form <- distance ~ -spline_effect + Intercept
+
+fit <- lgcp(
+  components = cmp,
+  formula = form,
+  data = toy_data,
+  domain = list(distance=fm_mesh_1d( 0:8 )),
+  options = list(bru_verbose=1)
 )
 
 
-plot_the_variance(
-  alpha=2, rho=2, sigma=.25
+dp <- predict(
+  fit,
+  data.frame(distance=dists),
+  formula = ~ exp(-spline_effect)
 )
 
 
+plot(
+  dists, 
+  dp$mean,
+  type = "l",
+  lwd = 2,
+  ylim = range(0,dp$q0.975)
+)
+lines(dists, dp$q0.975)
+lines(dists, dp$q0.025)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+# plot(dists, -log(dp$mean))
 
 
 
