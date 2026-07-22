@@ -169,21 +169,24 @@ detect_mesh <- fm_mesh_1d(
   degree = 2
 )
 
-# alpha=2, rho=2, sigma=.25
+# alpha=2; rho=2; sigma=1.5
 detect_matern <- inla.spde2.pcmatern(
   detect_mesh,
   alpha = 2,
   prior.range = c(2, 0.8), # P(rho < val) = alpha
-  prior.sigma = c(0.25, 0.01) # P(sigma > val) = alpha
+  prior.sigma = c(2, 0.01), # P(sigma > val) = alpha
+  extraconstr = list(
+    A=matrix(c(1,0,0,0,0), 1, 5),
+    e = matrix(0,1,1)
+  )
 )
 
 dists <- seq(0,8, length.out=1000)
 
 
-
 # for model scoring later
 true_detect_prob = detect_func_2observer_sigma(dists, true_sigmaA, true_sigmaB)
-# true_loglambda_at_ip <- c( fm_evaluate(mesh, field = sim_info$log_lambda, loc = ips$geometry) )
+true_loglambda_at_ip <- c( fm_evaluate(mesh, field = sim_info$log_lambda, loc = ips$geometry) )
 
 list_of_models <- list()
 
@@ -353,9 +356,12 @@ plot(dists, s$mean)
 # plot the difference in scores, a difference of zero implies the models perform the same wrt to that score
 # all scores are negatively orientated so a positive difference means the simpler merged observer model
 # performed worse
+# results <- readRDS("18-07-2026 19-13 simulation results.rda")
 
-g <- ggplot(results, aes(fill=model)) + expand_limits(y=0) +  geom_abline(intercept = 0, slope = 0, colour="red", linewidth=2)
-
+g <- ggplot(results, aes(fill=model)) + 
+  expand_limits(y=0) +  
+  geom_abline(intercept = 0, slope = 0, colour="red", linewidth=2) +
+  theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
 dsp <-g + geom_boxplot(aes(y=DS)) + labs(title="integrated DS on log lambda")
 msep <- g + geom_boxplot(aes(y=loglambda_SE)) + labs(title="integrated SE on mean log lambda")
 maep <- g + geom_boxplot(aes(y=lambda_AE)) + labs(title = "integrated AE on median lambda")
