@@ -84,29 +84,37 @@ model_one_observer_hn <- function(
 get_preds_from_one_observer_hn_fit <- function(
     fit,
     ips,
+    desired = c("detect", "lambda"),
     dists = seq(0,8, length.out=1000),
     m = 1000 # MC samples
 ){
   # assumes the detection functions are defined already
   
+  lst <- list()
   # log lambda and lambda
-  lst <- predict(
-    fit,
-    data.frame(geometry = ips$geometry),
-    formula = ~ list(
-        pred_lambda = exp(Intercept + spde),
-        pred_loglambda = Intercept + spde
-    ),
-    n.samples = m
-  )
+  if ( "lambda" %in% desired){
+    
+    lst <- predict(
+      fit,
+      data.frame(geometry = ips$geometry),
+      formula = ~ list(
+          pred_lambda = exp(Intercept + spde),
+          pred_loglambda = Intercept + spde
+      ),
+      n.samples = m
+    )
+  }
   
   # detection prob
-  lst$pred_detect <- predict(
-    fit,
-    data.frame(distance=dists),
-    formula = ~ hn(distance, sigma),
-    n.samples = m
-  )
+  if ( "detect" %in% desired){
+    
+    lst$pred_detect <- predict(
+      fit,
+      data.frame(distance=dists),
+      formula = ~ hn(distance, sigma),
+      n.samples = m
+    )
+  }
   
   lst$name <- deparse(substitute(fit))
   lst
@@ -161,29 +169,38 @@ model_one_observer_spline <- function(
 get_preds_from_one_observer_spline_fit <- function(
     fit,
     ips,
+    desired = c("detect", "lambda"),
     dists = seq(0,8, length.out=1000),
     m = 1000 # MC samples
 ){
   # assumes the detection functions are defined already
   
+  lst <- list()
+  
   # log lambda and lambda
-  lst <- predict(
-    fit,
-    data.frame(geometry = ips$geometry),
-    formula = ~ list(
-      pred_lambda = exp(Intercept  + typical_spde),
-      pred_loglambda = Intercept  + typical_spde
-    ),
-    n.samples = m
-  )
+  if ( "lambda" %in% desired){
+    
+    lst <- predict(
+      fit,
+      data.frame(geometry = ips$geometry),
+      formula = ~ list(
+        pred_lambda = exp(Intercept  + typical_spde),
+        pred_loglambda = Intercept  + typical_spde
+      ),
+      n.samples = m
+    )
+  }
   
   # detection prob
-  lst$pred_detect <- predict(
-    fit,
-    data.frame(distance = dists),
-    formula = ~ spline_detect_func(spline_spde),
-    n.samples = m
-  )
+  if ( "detect" %in% desired){
+    
+    lst$pred_detect <- predict(
+      fit,
+      data.frame(distance = dists),
+      formula = ~ spline_detect_func(spline_spde),
+      n.samples = m
+    )
+  }
   
   lst$name <- deparse(substitute(fit))
   lst
@@ -244,29 +261,37 @@ model_two_observers_hn <- function(
 get_preds_from_two_observers_hn_fit <- function(
     fit,
     ips,
+    desired = c("detect", "lambda"),
     dists = seq(0,8, length.out=1000),
     m = 1000 # MC samples
 ){
   # assumes the detection functions are defined already
   
+  lst <- list()
   # log lambda and lambda
-  lst <- predict(
-    fit,
-    data.frame(geometry = ips$geometry),
-    formula = ~ list(
-      pred_lambda = exp(Intercept + spde),
-      pred_loglambda = Intercept + spde
-    ),
-    n.samples = m
-  )
+  if ( "lambda" %in% desired){
+    
+    lst <- predict(
+      fit,
+      data.frame(geometry = ips$geometry),
+      formula = ~ list(
+        pred_lambda = exp(Intercept + spde),
+        pred_loglambda = Intercept + spde
+      ),
+      n.samples = m
+    )
+  }
   
   # detection prob
-  lst$pred_detect <- predict(
-    fit,
-    data.frame(distance = dists),
-    formula = ~ detect_func_2observer_sigma(distance, sigmaA, sigmaB),
-    n.samples = m
-  )
+  if ( "detect" %in% desired){
+    
+    lst$pred_detect <- predict(
+      fit,
+      data.frame(distance = dists),
+      formula = ~ detect_func_2observer_sigma(distance, sigmaA, sigmaB),
+      n.samples = m
+    )
+  }
   
   lst$name <- deparse(substitute(fit))
   lst
