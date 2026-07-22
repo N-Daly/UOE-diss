@@ -5,28 +5,8 @@ library(inlabru)
 library(sf)
 library(fmesher)
 library(units)
-
-
-dist_to_nearest_line_transect <- function(pts, transects=sim_info$line_transects){
-  
-  # this should be in kilometres as the crs is in km units
-  distance_to_each_transect <- st_distance(pts, transects)
-  #distance to nearest line transect
-  d <- apply(distance_to_each_transect, 1, min)
-  # cat(class(d), "\t")
-  
-  ii <- is.infinite(d) | is.nan(d) 
-  if (any(ii)){
-    cat("dist to samplers somehow got non finite or NaN values \n")
-    cat(class(pts), "\t", class(d), "\n")
-    cat(sum(ii), length(ii), "\n")
-    cat(d[ii], "\n")
-    for (el in pts[ii]){ cat(el, "\n") }
-  }
-  
-  d 
-}
-
+# detection functions are defined in function Definitions.R
+source("function Definitions.R")
 
 simulate_lcgp <- function(
     true_alpha = 2, true_rho = 500, true_sigma_GRF=1,

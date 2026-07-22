@@ -11,58 +11,10 @@ my_dir <- r"(C:\Users\ND\OneDrive - University of Edinburgh\Dissertation\UOE-dis
 setwd(my_dir)
 source("simulate 2D ground truth.R")
 source("observer models.R")
-
-catt <- function(...){ cat(..., "\n")}# pet peeve
-
-###########  detection functions given
-
-hn <- function(distance, sigma){  exp(-0.5 * (distance/sigma)^2 )  }
-log_hn <-  function(distance, sigma){ -0.5 * (distance/sigma)^2 }
+source("function Definitions.R")
 
 
-######## the PDFs for both detection state and distance
-
-log_g_2observer <- function(distance, detected, sigmaA, sigmaB, eps=1e-6){
-  
-  log_terms <- numeric(length(detected))
-  # A alone
-  ii <- detected==1 
-  log_terms[ii] = log_hn(distance[ii], sigmaA) + log1p(-hn(distance[ii], sigmaB)*(1-eps) )
-  # B alone
-  ii <- detected==2
-  log_terms[ii] = log1p(-hn(distance[ii], sigmaA)*(1-eps) ) + log_hn(distance[ii], sigmaB)
-  # A,B
-  ii <- detected==3
-  log_terms[ii] = log_hn(distance[ii], sigmaA) + log_hn(distance[ii], sigmaB)
-  
-  log_terms
-}
-
-spline_detect_func <- function(spline_effect){ exp(-spline_effect) }
-ln_spline_detect_func <- function(spline_effect){ -spline_effect }
-
-####### the probability of detection at a given distance
-
-detect_func_2observer_sigma <- function(distance, sigmaA, sigmaB){
-  #ln( (1-pA)(1-pB) )
-  log_terms <- log1p( -hn(distance, sigmaA) ) + log1p( -hn(distance, sigmaB) )
-  # cant think of a better way to do this bit
-  #  1-terms  =  1- e^log_terms =  -1*( e^logterms - 1 ) 
-  # my assumption is that if the probs are high this will be stable for the small log terms
-  # and if the probs are low this will be also fine for the bigger log terms
-  -expm1(log_terms)
-}
-
-######## functions for assessing model fit 
-
-dawid_sebastiani_score <- function(post_pred, true_value){
-  E <- post_pred$mean
-  # i am not sure if this step is correct
-  V <- post_pred$sd^2
-  ( (true_value - E)^2 / V)  + log(V)
-}
-
-
+########## calculating the scores
 get_scoring_differences <- function(
   models,
   ips,
@@ -130,8 +82,6 @@ observed_points <- sim_info$samples_df
 
 ######## set up before modelling
 # mesh <- readRDS("mesh20-july qual loc 2-20.rda")
-# mesh <- readRDS("mesh20-july from hex e1-5 20 only.rda")
-# 
 # start <- proc.time()
 # ips <- fm_int( mesh, samplers=sim_info$buffered_transects$geometry)
 # ips$distance <- dist_to_nearest_line_transect(ips$geometry, mexdolphin_sf$samplers)
@@ -139,15 +89,15 @@ observed_points <- sim_info$samples_df
 # print((end-start)[3])
 # ips
 
-# saveRDS(ips, "ips20-july from hex e1-5 20 only.rda")
 # mesh <- mexdolphin_sf$mesh
-mesh <- readRDS("mesh20-july from hex e6 20 only.rda")
+# ips <- fm_int(list(geometry=mexdolphin_sf$mesh), samplers=st_buffer(mexdolphin_sf$samplers, 8, endCapStyle = "FLAT") )
+# ips$distance <- dist_to_nearest_line_transect(ips$geometry, mexdolphin_sf$samplers)
 
+mesh <- readRDS("mesh20-july from hex e6 20 only.rda")
 ips <- readRDS("ips20-july from hex e1-5 20 only.rda")
 
-# saveRDS(ips, "ips20-july qual loc 2-20.rda")
-
 # ips <- st_as_sf( readRDS("ips_interiorTransects_2subdivisions.rda") )
+
 # so the one observer models have only a geometry dimension
 # the two observer model needs a detection state dimension - who spotted the animal
 # here i naively expand the existing ips uniformly across this dimension
@@ -186,7 +136,7 @@ dists <- seq(0,8, length.out=1000)
 
 # for model scoring later
 true_detect_prob = detect_func_2observer_sigma(dists, true_sigmaA, true_sigmaB)
-true_loglambda_at_ip <- c( fm_evaluate(mesh, field = sim_info$log_lambda, loc = ips$geometry) )
+true_loglambda_at_ip <- c( fm_evaluate(mexdolphin_sf$mesh, field = sim_info$log_lambda, loc = ips$geometry) )
 
 list_of_models <- list()
 
