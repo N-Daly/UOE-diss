@@ -3,6 +3,17 @@
 hn <- function(distance, sigma){  exp(-0.5 * (distance/sigma)^2 )  }
 log_hn <-  function(distance, sigma){ -0.5 * (distance/sigma)^2 }
 
+hr <- function(distance, sigma, gamma) {
+  1 - exp( -(distance / sigma)^-gamma )
+}
+log_hr <- function(distance, sigma, gamma){
+  # do (dist/sigma)^-b on log scale
+  # frac_part <- -exp( -gamma*log(distance) + gamma*log(sigma) )
+  # 
+  # log1p( -exp(frac_part) )
+  log(hr(distance, sigma, gamma))
+}
+
 
 ######## the PDFs for both detection state and distance
 
@@ -22,6 +33,20 @@ log_g_2observer <- function(distance, detected, sigmaA, sigmaB, eps=1e-6){
   log_terms
 }
 
+log_g_2observer_hr <- function(distance, detected, sigmaA, sigmaB, gammaA, gammaB, eps=1e-6){
+
+  log_terms <- numeric(length(detected))
+  # A alone
+  ii <- detected==1
+  log_terms[ii] = log_hr(distance[ii], sigmaA, gammaA) + log1p( -hr(distance[ii], sigmaB, gammaB)*(1-eps) ) 
+  # B alone
+  ii <- detected==2
+  log_terms[ii] = log1p( -hr(distance[ii], sigmaA, gammaA)*(1-eps) ) + log_hr(distance[ii], sigmaB, gammaB)
+  # Both A,B
+  ii <- detected==3
+  log_terms[ii] =  log_hr(distance[ii], sigmaA, gammaA) + hr(distance[ii], sigmaB, gammaB)
+}
+
 spline_detect_func <- function(spline_effect){ exp(-spline_effect) }
 ln_spline_detect_func <- function(spline_effect){ -spline_effect }
 
@@ -35,6 +60,20 @@ detect_func_2observer_sigma <- function(distance, sigmaA, sigmaB){
   # my assumption is that if the probs are high this will be stable for the small log terms
   # and if the probs are low this will be also fine for the bigger log terms
   -expm1(log_terms)
+}
+
+detect_func_2_observer_hr <- function(distance, sigmaA, sigmaB, gammaA, gammaB){
+  # g = 1 - (1-pA)*(1-pB)
+  #  for the hazard rate pdf
+  # pA = 1-exp( frac )
+  # so g becomes 1 - exp[ log(1-pA) + log(1-pB) ]
+   # = 1 - exp( fracA + fracB )
+  
+  # do the fraction (dist/sigma)^-b itself on the log scale
+  fracA <- -exp( -gammaA*log(distance) + gammaA*log(sigmaA) )
+  fracB <- -exp( -gammaB*log(distance) + gammaB*log(sigmaB) )
+  
+  1 - exp(fracA + fracB)
 }
 
 ######## Scoring rules

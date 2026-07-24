@@ -298,4 +298,140 @@ get_preds_from_two_observers_hn_fit <- function(
 }
 
 
+model_one_observer_hr_fixed_gamma <- function(
+    dd, 
+    construction_info, # for the mesh, buffered transects and other info
+    ips,
+    mtrn_prior = matern_prior, # save memory
+    half_width = 8,
+    bru_verbose = 0,
+    fixed_gamma_val = 1
+){
+  cmp <- ~ Intercept(1) +
+    sigma(1,
+           prec.linear = 1,
+           marginal = bm_marginal(qexp, pexp, dexp, rate = 1/half_width) 
+    ) +
+    spde(main=geometry, model = matern_prior)
+  
+  form <- geometry + detected  ~ Intercept  +
+    log_hr(distance, sigma, gamma=fixed_gamma_val) + 
+    log(2) + spde
+  
+  
+  fit <- lgcp(
+    components = cmp, 
+    formula = form,
+    data = dd,
+    ips = ips,
+    options = list(
+      bru_verbose = bru_verbose,
+      bru_initial = list(sigma = half_width/4), # need to review this
+      bru_max_iter = 20
+    )
+  )
+}
+
+model_two_observers_hr_fixed_gamma <- function(
+    dd, 
+    construction_info, # for the mesh, buffered transects and other info
+    ips,
+    mtrn_prior = matern_prior, # save memory
+    half_width = 8,
+    bru_verbose = 0,
+    fixed_gamma_val = 1
+){
+  
+  
+  cmp <- ~ Intercept(1) +
+    sigmaA(1,
+           prec.linear = 1,
+           marginal = bm_marginal(qexp, pexp, dexp, rate = 1/8) 
+    ) +
+    sigmaB(1,
+           prec.linear = 1,
+           marginal = bm_marginal(qexp, pexp, dexp, rate = 1/8)
+    )+
+    spde(main=geometry, model = matern_prior)
+  
+  form <- geometry + detected  ~ Intercept  +
+    log_g_2observer_hr(
+      distance,
+      detected,
+      sigmaA, sigmaB,
+      gammaA = fixed_gamma_val, gammaB = fixed_gamma_val
+    ) + log(2) + spde
+  
+  
+  fit <- lgcp(
+    components = cmp, 
+    formula = form,
+    data = dd,
+    ips = ips,
+    options = list(
+      bru_verbose = bru_verbose,
+      bru_initial = list(sigmaA = half_width/4, sigmaB = half_width/4), # need to review this
+      bru_max_iter = 20
+      )
+  )
+  fit
+}
+
+model_two_observers_hr <- function(
+    dd, 
+    construction_info, # for the mesh, buffered transects and other info
+    ips,
+    prior_on_gamma,
+    mtrn_prior = matern_prior, # save memory
+    half_width = 8,
+    bru_verbose = 0
+){
+  #bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1)
+  # prior_on_gamma <- bm_marginal(qexp, pexp, dexp, rate=1)
+  
+  cmp <- ~ Intercept(1) +
+    sigmaA(1,
+           prec.linear = 1,
+           marginal = bm_marginal(qexp, pexp, dexp, rate = 1/8) 
+    ) +
+    sigmaB(1,
+           prec.linear = 1,
+           marginal = bm_marginal(qexp, pexp, dexp, rate = 1/8)
+    )+ 
+    gammaA(1,
+           prec.linear = 1,
+           marginal = prior_on_gamma
+    )+ 
+    gammaB(1,
+           prec.linear = 1,
+           marginal = prior_on_gamma
+    )+
+    spde(main=geometry, model = matern_prior)
+  
+  form <- geometry + detected  ~ Intercept  +
+    log_g_2observer_hr(
+      distance,
+      detected,
+      sigmaA, sigmaB,
+      gammaA, gammaB
+    ) + 
+    log(2) + spde
+  
+  
+  fit <- lgcp(
+    components = cmp, 
+    formula = form,
+    data = dd,
+    ips = ips,
+    options = list(
+      bru_verbose = bru_verbose,
+      bru_initial = list(# need to review this
+        sigmaA = half_width/4, sigmaB = half_width/4,
+        gammaA = 1, gammaB = 1
+      ),
+      bru_max_iter = 20
+    )
+  )
+  fit
+}
 
