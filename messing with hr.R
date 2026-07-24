@@ -34,7 +34,7 @@ true_sigmaA <- 3; true_sigmaB <- 2; true_range <- 500; true_sigma_grf <- 1
 set.seed(800)
 # simulate a ground truth
 sim_info <- simulate_lcgp_distance_thinning(
-  detect_func = function(x, sig){ hr(x, sig, gamma=2)},
+  detect_func = hn,
   detect_func_paramA = true_sigmaA,
   detect_func_paramB = true_sigmaB,
   true_beta0 = -5,
@@ -59,32 +59,32 @@ matern_prior <- inla.spde2.pcmatern(
   prior.range = c(600, 0.1), # true rho is 500
   prior.sigma = c(.5, 0.5)   # true sigma is 1
 )
-
-# fit a hr fixed with a "lucky" choice of gamma
-dists <- seq(0, 8, length.out=1000)
-gammas <- 1:10
-plot(
-  dists,
-  dists*0,
-  ylim = 0:1,
-  type = "n",
-  main = "hazard rate: sigma = 3, gamma varying"
-)
-for (gam in gammas){
-  lines(
-    dists, 
-    hr(dists, 3, gam),
-    col = rainbow(length(gammas))[gam]
-  )
-}
-legend(
-  x="topright",
-  legend = gammas,
-  col = rainbow(length(gammas)),
-  pch = 19
-)
-lines(dists, true_detect_prob, lwd=3)
-mtext("black is true detect prob")
+# 
+# # fit a hr fixed with a "lucky" choice of gamma
+# dists <- seq(0, 8, length.out=1000)
+# gammas <- 1:10
+# plot(
+#   dists,
+#   dists*0,
+#   ylim = 0:1,
+#   type = "n",
+#   main = "hazard rate: sigma = 3, gamma varying"
+# )
+# for (gam in gammas){
+#   lines(
+#     dists, 
+#     hr(dists, 3, gam),
+#     col = rainbow(length(gammas))[gam]
+#   )
+# }
+# legend(
+#   x="topright",
+#   legend = gammas,
+#   col = rainbow(length(gammas)),
+#   pch = 19
+# )
+# lines(dists, true_detect_prob, lwd=3)
+# mtext("black is true detect prob")
 
 fixed_gamma <- 2
 
@@ -123,8 +123,18 @@ dp <- predict(
   n.samples = 1000
 )
 plot_it(dp, main = paste("2 observers gamma =", fixed_gamma))
+bru_convergence_plot(fit)
 
-
+# 
+# plot(predict(
+#   fit, 
+#   formula =~ sigmaA,
+#   n.samples=1000
+# )) + 
+# plot(predict(
+#   fit, 
+#   formula =~ sigmaB
+# ))
 # trialling variable gamma and sigma, with different priors for gamma
 
 # gamma(shape=2, rate=1)
@@ -133,6 +143,10 @@ fit2 <- model_two_observers_hr(
   sim_info,
   ips = ips,
   prior_on_gamma = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
+  bru_initial_params = list(
+    gammaA = qnorm(pgamma(2, shape=2, rate=1)),
+    gammaB = qnorm(pgamma(3, shape=2, rate=1))
+  ),
   mtrn_prior = matern_prior,
   bru_verbose = 1
 )
@@ -151,6 +165,10 @@ fit3 <- model_two_observers_hr(
   sim_info,
   ips = ips,
   prior_on_gamma = bm_marginal(qexp, pexp, dexp, rate=1),
+  bru_initial_params = list(
+    gammaA = qnorm(pexp(2, rate=1)),
+    gammaB = qnorm(pexp(2, rate=1))
+  ),
   mtrn_prior = matern_prior,
   bru_verbose = 1
 )
@@ -161,7 +179,7 @@ dp3 <- predict(
   n.samples = 1000
 )
 plot_it(dp3, main = "2 observers exp(1) prior")
-
+# bru_convergence_plot(fit3)
 
 # unif(0, 10)
 fit4 <- model_two_observers_hr(
@@ -169,6 +187,10 @@ fit4 <- model_two_observers_hr(
   sim_info,
   ips = ips,
   prior_on_gamma = bm_marginal(qunif, punif, dunif, min=0.0001, max = 10),
+  bru_initial_params = list(
+    gammaA = qnorm(punif(2, min=0.0001, max = 10)),
+    gammaB = qnorm(punif(2, min=0.0001, max = 10))
+  ),
   mtrn_prior = matern_prior,
   bru_verbose = 1
 )
