@@ -4,6 +4,12 @@ hn <- function(distance, sigma){  exp(-0.5 * (distance/sigma)^2 )  }
 log_hn <-  function(distance, sigma){ -0.5 * (distance/sigma)^2 }
 
 hr <- function(distance, sigma, gamma) {
+  # catt("hr arg lengths:", length(distance), length(sigma), length(gamma))
+  
+  if (any(is.na(sigma))){
+    catt("hr : got ", sum(is.na(sigma)), " NAs")
+  }
+  
   1 - exp( -(distance / sigma)^-gamma )
 }
 log_hr <- function(distance, sigma, gamma){
@@ -34,17 +40,38 @@ log_g_2observer <- function(distance, detected, sigmaA, sigmaB, eps=1e-6){
 }
 
 log_g_2observer_hr <- function(distance, detected, sigmaA, sigmaB, gammaA, gammaB, eps=1e-6){
+  # 
+  # cat(
+  #   "log g arg lengths: dist", length(distance),
+  #   "detect", length(detected),
+  #   "sigmaA, sigmaB", length(sigmaA), length(sigmaB),
+  #   "gammaA, gammaB", length(gammaA), length(gammaB),
+  #   "\n"
+  # )
+  # 
 
+  if( length(sigmaA) == 1 & length(distance) > 1){
+    sigmaA <- rep(sigmaA, length(distance))
+    sigmaB <- rep(sigmaB, length(distance))
+  }
+
+  if( length(gammaA) == 1 & length(sigmaA) > 1){
+    gammaA <- rep(gammaA, length(sigmaA))
+    gammaB <- rep(gammaB, length(sigmaB))
+  }
+  
   log_terms <- numeric(length(detected))
   # A alone
   ii <- detected==1
-  log_terms[ii] = log_hr(distance[ii], sigmaA, gammaA) + log1p( -hr(distance[ii], sigmaB, gammaB)*(1-eps) ) 
+  log_terms[ii] = log_hr(distance[ii], sigmaA[ii], gammaA[ii]) + log1p( -hr(distance[ii], sigmaB[ii], gammaB[ii])*(1-eps) ) 
   # B alone
   ii <- detected==2
-  log_terms[ii] = log1p( -hr(distance[ii], sigmaA, gammaA)*(1-eps) ) + log_hr(distance[ii], sigmaB, gammaB)
+  log_terms[ii] = log1p( -hr(distance[ii], sigmaA[ii], gammaA[ii])*(1-eps) ) + log_hr(distance[ii], sigmaB[ii], gammaB[ii])
   # Both A,B
   ii <- detected==3
-  log_terms[ii] =  log_hr(distance[ii], sigmaA, gammaA) + hr(distance[ii], sigmaB, gammaB)
+  log_terms[ii] =  log_hr(distance[ii], sigmaA[ii], gammaA[ii]) + hr(distance[ii], sigmaB[ii], gammaB[ii])
+  
+  log_terms
 }
 
 spline_detect_func <- function(spline_effect){ exp(-spline_effect) }
