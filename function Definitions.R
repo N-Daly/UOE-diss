@@ -23,7 +23,12 @@ log_hr <- function(distance, sigma, gamma){
 
 ######## the PDFs for both detection state and distance
 
-log_g_2observer <- function(distance, detected, sigmaA, sigmaB, eps=1e-6){
+log_g_2observer_hn <- function(distance, detected, sigmaA, sigmaB, eps=1e-9){
+  
+  if ( length(sigmaA) == 1 & length(distance) > 1 ){
+    sigmaA <- rep(sigmaA, length(distance))
+    sigmaB <- rep(sigmaB, length(distance))  
+  }
   
   log_terms <- numeric(length(detected))
   # A alone
@@ -39,7 +44,7 @@ log_g_2observer <- function(distance, detected, sigmaA, sigmaB, eps=1e-6){
   log_terms
 }
 
-log_g_2observer_hr <- function(distance, detected, sigmaA, sigmaB, gammaA, gammaB, eps=1e-6){
+log_g_2observer_hr <- function(distance, detected, sigmaA, sigmaB, gammaA, gammaB, eps=1e-9){
   # 
   # cat(
   #   "log g arg lengths: dist", length(distance),
