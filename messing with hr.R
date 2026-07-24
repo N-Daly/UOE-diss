@@ -91,7 +91,6 @@ fixed_gamma <- 2
 # single observer with gamma fixed
 fit_single <- model_one_observer_hr_fixed_gamma(
   observed_points,
-  sim_info,
   ips = ips,
   mtrn_prior = matern_prior,
   bru_verbose = 1,
@@ -109,7 +108,6 @@ plot_it(dp_single, "1 observer gamma=2")
 # 2 observers but gamma still fixed
 fit <- model_two_observers_hr_fixed_gamma(
   observed_points,
-  sim_info,
   ips = ips,
   mtrn_prior = matern_prior,
   bru_verbose = 1,
@@ -140,7 +138,6 @@ bru_convergence_plot(fit)
 # gamma(shape=2, rate=1)
 fit2 <- model_two_observers_hr(
   observed_points,
-  sim_info,
   ips = ips,
   prior_on_gamma = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
   bru_initial_params = list(
@@ -162,7 +159,6 @@ plot_it(dp2, main = "2 observers gamma(2,1) prior")
 # exp(1)
 fit3 <- model_two_observers_hr(
   observed_points,
-  sim_info,
   ips = ips,
   prior_on_gamma = bm_marginal(qexp, pexp, dexp, rate=1),
   bru_initial_params = list(
@@ -184,7 +180,6 @@ plot_it(dp3, main = "2 observers exp(1) prior")
 # unif(0, 10)
 fit4 <- model_two_observers_hr(
   observed_points,
-  sim_info,
   ips = ips,
   prior_on_gamma = bm_marginal(qunif, punif, dunif, min=0.0001, max = 10),
   bru_initial_params = list(

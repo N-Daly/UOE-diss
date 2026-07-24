@@ -147,7 +147,7 @@ list_of_models <- list()
 catt("fitting merged")
 start <- proc.time()
 fit_merged_observers <- model_one_observer_hn(
-  observed_points, sim_info, matern_prior, ips=ips, bru_verbose=1
+  observed_points, matern_prior, ips=ips, bru_verbose=1
 )
 end <- proc.time()
 print((end-start)[3])
@@ -162,7 +162,7 @@ print((end-start)[3])
 catt("fitting two")
 start <- proc.time()
 fit_two_observers <- model_two_observers_hn(
-  observed_points, sim_info, matern_prior, ips = ips_with_detection_states, bru_verbose=1
+  observed_points, matern_prior, ips = ips_with_detection_states, bru_verbose=1
 )
 end <- proc.time()
 print((end-start)[3])
@@ -177,7 +177,7 @@ print((end-start)[3])
 catt("fitting spline")
 start <- proc.time()
 fit_one_spline <- model_one_observer_spline(
-  observed_points, sim_info, matern_prior, detect_matern, ips=ips, bru_verbose=1
+  observed_points, matern_prior, detect_matern, ips=ips, bru_verbose=1
 )
 end <- proc.time()
 print((end-start)[3])
@@ -246,7 +246,7 @@ plot(dists, s$mean)
 #   # Model what A and B saw as a combined observer with a hn detection function
 #   catt("fitting merged")
 #   start <- proc.time()
-#   fit_merged_observers <- model_one_observer_hn(observed_points, sim_info, matern_prior, ips=ips)
+#   fit_merged_observers <- model_one_observer_hn(observed_points, matern_prior, ips=ips)
 #   end <- proc.time()
 #   print((end-start)[3])
 #   
@@ -260,7 +260,7 @@ plot(dists, s$mean)
 #   catt("fitting two")
 #   start <- proc.time()
 #   fit_two_observers <- model_two_observers_hn(
-#     observed_points, sim_info, matern_prior, ips = ips_with_detection_states
+#     observed_points, matern_prior, ips = ips_with_detection_states
 #   )
 #   end <- proc.time()
 #   print((end-start)[3])
@@ -275,7 +275,7 @@ plot(dists, s$mean)
 #   catt("fitting spline")
 #   start <- proc.time()
 #   fit_one_spline <- model_one_observer_spline(
-#     observed_points, sim_info, matern_prior, detect_matern, ips=ips
+#     observed_points, matern_prior, detect_matern, ips=ips
 #   )
 #   end <- proc.time()
 #   print((end-start)[3])

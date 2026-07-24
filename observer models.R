@@ -37,7 +37,6 @@ make_spatially_varying_mesh <- function(num_vertices, sim_info){
 
 model_one_observer_hn <- function(
     dd, 
-    construction_info, # for the mesh, buffered transects and so on
     ips,
     mtrn_prior =matern_prior,
     half_width=8,
@@ -48,16 +47,13 @@ model_one_observer_hn <- function(
   
   #save compute and space if a previous model already made it
   matern_prior = mtrn_prior
-  # matern_prior <- inla.spde2.pcmatern(
-  #    construction_info$the_mesh,
-  #   prior.range = c(600, 0.1), # true rho is 500
-  #   prior.sigma = c(.5, 0.5)   # true sigma is 1
-  # )
+  
+  lambda_sigma <- 1/half_width
   
   cmp <- ~ Intercept(1) +
     sigma(1,
            prec.linear = 1,
-           marginal = bm_marginal(qexp, pexp, dexp, rate = 1/half_width) #need to think more about this - effect on detection at end of halfwidth
+           marginal = bm_marginal(qexp, pexp, dexp, rate = lambda_sigma) #need to think more about this - effect on detection at end of halfwidth
     ) +
     spde(main=geometry, model = matern_prior) 
   
@@ -72,9 +68,9 @@ model_one_observer_hn <- function(
     formula = form,
     data =  dd,
     ips = ips,
-    options = list(bru_verbose= bru_verbose,
-                   # verbose = 4,
-                   bru_initial = list(sigma = half_width/4) # need to review this 
+    options = list(
+      bru_verbose= bru_verbose, 
+      bru_initial = list(sigma = qnorm(pexp(2, lambda_sigma)) )
     )
   )
   
@@ -122,7 +118,6 @@ get_preds_from_one_observer_hn_fit <- function(
 
 model_one_observer_spline <- function(
     dd,
-    construction_info,
     ips,
     mtrn_prior = matern_prior,
     mtrn_detect_prior = detect_matern,
@@ -132,20 +127,7 @@ model_one_observer_spline <- function(
   
   
   matern_prior = mtrn_prior
-  # matern_prior <- inla.spde2.pcmatern(
-  #   sim_info$the_mesh,
-  #   prior.range = c(600, 0.1), # true rho is 500
-  #   prior.sigma = c(.5, 0.5)   # true sigma is 1
-  # )
-  
   detect_matern = mtrn_detect_prior
-  # # alpha=2, rho=2, sigma=.25
-  # detect_matern <- inla.spde2.pcmatern(
-  #   detect_mesh,
-  #   alpha = 2,
-  #   prior.range = c(2, 0.99), # P(rho < val) = alpha
-  #   prior.sigma = c(0.25, 0.01) # P(sigma > val) = alpha
-  # )
   
   cmp <- ~ Intercept(1) +
     spline_spde(main=distance, model=detect_matern) +
@@ -209,7 +191,6 @@ get_preds_from_one_observer_spline_fit <- function(
 
 model_two_observers_hn <- function(
   dd, 
-  construction_info, # for the mesh, buffered transects and other info
   ips,
   mtrn_prior = matern_prior, # save memory
   half_width = 8,
@@ -217,26 +198,23 @@ model_two_observers_hn <- function(
 ){
 
   matern_prior <- mtrn_prior
-  # matern_prior <- inla.spde2.pcmatern(
-  #   construction_info$the_mesh,
-  #   prior.range = c(600, 0.1), # true rho is 500
-  #   prior.sigma = c(.5, 0.5)   # true sigma is 1
-  # )
+  
+  lambda_sigma <- 1/half_width
   
   cmp <- ~ Intercept(1) +
     sigmaA(1,
            prec.linear = 1,
-           marginal = bm_marginal(qexp, pexp, dexp, rate = 1/8) 
+           marginal = bm_marginal(qexp, pexp, dexp, rate = lambda_sigma) 
     ) +
     sigmaB(1,
            prec.linear = 1,
-           marginal = bm_marginal(qexp, pexp, dexp, rate = 1/8)
+           marginal = bm_marginal(qexp, pexp, dexp, rate = lambda_sigma)
     )+
     spde(main=geometry, model = matern_prior)
 
   
   form <- geometry + detected  ~ Intercept  +
-    log_g_2observer(
+    log_g_2observer_hn(
       distance,
       detected,
       sigmaA, sigmaB
@@ -248,9 +226,12 @@ model_two_observers_hn <- function(
     formula = form,
     data =  dd,
     ips = ips,
-    options = list(bru_verbose= bru_verbose,
-                   # verbose = 4,
-                   bru_initial = list(sigmaA = half_width/4, sigmaB = half_width/4) # need to review this
+    options = list(
+      bru_verbose= bru_verbose,
+      bru_initial = list(
+        sigmaA = qnorm(pexp(2, lambda_sigma)),
+        sigmaB = qnorm(pexp(2, lambda_sigma))
+      ) 
     )
   )
   
@@ -300,13 +281,13 @@ get_preds_from_two_observers_hn_fit <- function(
 
 model_one_observer_hr_fixed_gamma <- function(
     dd, 
-    construction_info, # for the mesh, buffered transects and other info
     ips,
     mtrn_prior = matern_prior, # save memory
     half_width = 8,
     bru_verbose = 0,
     fixed_gamma_val = 1
 ){
+  
   cmp <- ~ Intercept(1) +
     sigma(1,
            prec.linear = 1,
@@ -334,14 +315,14 @@ model_one_observer_hr_fixed_gamma <- function(
 
 model_two_observers_hr_fixed_gamma <- function(
     dd, 
-    construction_info, # for the mesh, buffered transects and other info
     ips,
     mtrn_prior = matern_prior, # save memory
     half_width = 8,
     bru_verbose = 0,
     fixed_gamma_val = 1
 ){
-  lambda_sigma <- 2/8
+  
+  lambda_sigma <- 2/half_width
   
   cmp <- ~ Intercept(1) +
     sigmaA(1,
@@ -382,7 +363,6 @@ model_two_observers_hr_fixed_gamma <- function(
 
 model_two_observers_hr <- function(
     dd, 
-    construction_info, # for the mesh, buffered transects and other info
     ips,
     prior_on_gamma,
     bru_initial_params = list(),
@@ -390,9 +370,8 @@ model_two_observers_hr <- function(
     half_width = 8,
     bru_verbose = 0
 ){
-  #bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1)
-  # prior_on_gamma <- bm_marginal(qexp, pexp, dexp, rate=1)
-  lambda_sigma <- 1/8
+  
+  lambda_sigma <- 1/half_width
   
   bru_initial_params$sigmaA <- qnorm(pexp(2, lambda_sigma))
   bru_initial_params$sigmaB <- qnorm(pexp(2, lambda_sigma))
