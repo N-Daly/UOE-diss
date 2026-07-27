@@ -313,6 +313,46 @@ model_one_observer_hr_fixed_gamma <- function(
   )
 }
 
+get_preds_from_one_observer_hr_fixed_gamma_fit <- function(
+    fit,
+    ips,
+    fixed_gamma_val,
+    desired = c("detect", "lambda"),
+    dists = seq(0,8, length.out=1000),
+    m = 1000 # MC samples
+){
+  # assumes the detection functions are defined already
+  
+  lst <- list()
+  # log lambda and lambda
+  if ( "lambda" %in% desired){
+    
+    lst <- predict(
+      fit,
+      data.frame(geometry = ips$geometry),
+      formula = ~ list(
+        pred_lambda = exp(Intercept + spde),
+        pred_loglambda = Intercept + spde
+      ),
+      n.samples = m
+    )
+  }
+  
+  # detection prob
+  if ( "detect" %in% desired){
+    
+    lst$pred_detect <- predict(
+      fit,
+      data.frame(distance=dists),
+      formula = ~ hr(distance, sigma, gamma = fixed_gamma_val),
+      n.samples = m
+    )
+  }
+  
+  lst$name <- deparse(substitute(fit))
+  lst
+}
+
 model_two_observers_hr_fixed_gamma <- function(
     dd, 
     ips,
@@ -419,4 +459,59 @@ model_two_observers_hr <- function(
   )
   fit
 }
+
+get_preds_from_two_observers_hr_fit <- function(
+    fit,
+    ips,
+    fixed_gamma_val = NULL, # if NULL, gamma is assumed to be a r.v
+    desired = c("detect", "lambda"),
+    dists = seq(0,8, length.out=1000),
+    m = 1000 # MC samples
+){
+  # assumes the detection functions are defined already
+  
+  lst <- list()
+  # log lambda and lambda
+  if ( "lambda" %in% desired){
+    
+    lst <- predict(
+      fit,
+      data.frame(geometry = ips$geometry),
+      formula = ~ list(
+        pred_lambda = exp(Intercept + spde),
+        pred_loglambda = Intercept + spde
+      ),
+      n.samples = m
+    )
+  }
+  
+  # detection prob
+  if ( "detect" %in% desired){
+    
+    # if NULL, gamma is assumed to be a r.v
+    if ( is.null(fixed_gamma_val)){
+      
+      # sample both sigma and gamma to get detection probabilities
+      lst$pred_detect <- predict(
+        fit,
+        data.frame(distance=dists),
+        formula = ~ detect_func_2_observer_hr(distance, sigmaA, sigmaB, gammaA, gammaB),
+        n.samples = m
+      )
+    } else{
+      
+      # sample only sigma to get detection probabilities
+      lst$pred_detect <- predict(
+        fit,
+        data.frame(distance=dists),
+        formula = ~ detect_func_2_observer_hr(distance, sigmaA, sigmaB, gammaA=fixed_gamma_val, gammaB=fixed_gamma_val),
+        n.samples = m
+      )
+    }
+  }
+  
+  lst$name <- deparse(substitute(fit))
+  lst
+}
+
 
