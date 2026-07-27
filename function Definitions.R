@@ -120,12 +120,13 @@ get_scoring_differences <- function(
     models,
     ips,
     true_detect,
-    true_loglambda
+    true_loglambda,
+    true_avg_prob = mean(true_detect)
 ){
   base_mod <- models[[1]] # should always be the one observer hn
   
   # get the scores of this base model
-  base_mod$DS <- dawid_sebastiani_score(base_mod$pred_loglambda, true_loglambda)
+  base_mod$DS_loglambda <- dawid_sebastiani_score(base_mod$pred_loglambda, true_loglambda)
   
   base_mod$loglambda_SE <- (base_mod$pred_loglambda$mean - true_loglambda)^2
   
@@ -133,23 +134,27 @@ get_scoring_differences <- function(
   
   base_mod$detect_AE <- abs(base_mod$pred_detect$median - true_detect)
   
+  base_mod$DS_avg_prob <- dawid_sebastiani_score(base_mod$pred_avg_prob, true_avg_prob_detect)
+  
   score_diffs <- NULL
   for (i in 2:length(models)){
     mod <- models[[i]]
     
-    #get this model' scores 
-    mod$DS <- dawid_sebastiani_score(mod$pred_loglambda, true_loglambda)
+    #get this model's scores 
+    mod$DS_loglambda <- dawid_sebastiani_score(mod$pred_loglambda, true_loglambda)
     mod$loglambda_SE <- (mod$pred_loglambda$mean - true_loglambda)^2
     mod$lambda_AE <- abs(mod$pred_lambda$median - true_loglambda)
     mod$detect_AE <- abs(mod$pred_detect$median - true_detect)
+    mod$DS_avg_prob <- dawid_sebastiani_score(mod$pred_avg_prob, true_avg_prob_detect)
     
     # now take the difference in scores between this and the base
     # and integrate it over the domain
     mod_diff <- list(
-      DS = sum(ips$weight * (base_mod$DS - mod$DS)),
+      DS_loglambda = sum(ips$weight * (base_mod$DS_loglambda - mod$DS_loglambda)),
       loglambda_SE = sum(ips$weight * (base_mod$loglambda_SE - mod$loglambda_SE)),
       lambda_AE = sum(ips$weight * (base_mod$lambda_AE - mod$lambda_AE)),
-      detect_AE = mean(base_mod$detect_AE - mod$detect_AE)
+      detect_AE = mean(base_mod$detect_AE - mod$detect_AE),
+      DS_avg_prob = base_mod$DS_avg_prob - mod$DS_avg_prob
     )
     
     mod_diff$model <- mod$name

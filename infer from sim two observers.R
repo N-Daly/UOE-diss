@@ -95,14 +95,13 @@ dists <- seq(0,8, length.out=1000)
 # for model scoring later
 true_detect_prob = detect_func_2observer_sigma(dists, true_sigmaA, true_sigmaB)
 true_loglambda_at_ip <- c( fm_evaluate(mexdolphin_sf$mesh, field = sim_info$log_lambda, loc = ips$geometry) )
-
 list_of_models <- list()
 how_verbose = 1
 
 
 ######## fitting models
 
-# # Model what A and B saw as a combined observer with a hn detection function
+# # # Model what A and B saw as a combined observer with a hn detection function
 # catt("fitting merged HN")
 # start <- proc.time()
 # fit <- model_one_observer_hn(
@@ -119,7 +118,7 @@ how_verbose = 1
 # 
 # 
 # rm(fit); invisible(gc())
-# # Model what A and B saw as a two observer likelihood with hn detection functions
+# # # Model what A and B saw as a two observer likelihood with hn detection functions
 # catt("fitting two HN ")
 # start <- proc.time()
 # fit <- model_two_observers_hn(
@@ -196,7 +195,7 @@ how_verbose = 1
 # list_of_models$one_obs_spline$name <- "one_obs_spline"
 # end <- proc.time()
 # print((end-start)[3])
-
+# 
 # rm(fit); invisible(gc())
 # 
 # initial_results <- get_scoring_differences(
@@ -354,12 +353,13 @@ g <- ggplot(results, aes(fill=model)) +
   expand_limits(y=0) +
   geom_abline(intercept = 0, slope = 0, colour="red", linewidth=2) +
   theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
-dsp <-g + geom_boxplot(aes(y=DS)) + labs(title="integrated DS on log lambda")
+ds_ll <-g + geom_boxplot(aes(y=DS)) + labs(title="integrated DS on log lambda")
 msep <- g + geom_boxplot(aes(y=loglambda_SE)) + labs(title="integrated SE on mean log lambda")
 maep <- g + geom_boxplot(aes(y=lambda_AE)) + labs(title = "integrated AE on median lambda")
 maedetectp <- g + geom_boxplot(aes(y=detect_AE)) + labs(title="mean AE on detection prob")
+ds_avg_p <- g + geom_boxplot(aes(y=detect_AE)) + labs(title="DS on average detection prob")
 
-(dsp + msep) / ( maep + maedetectp)
+(ds_ll + msep) / ( maep + maedetectp)
 
 
 
