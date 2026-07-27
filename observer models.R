@@ -179,7 +179,8 @@ get_preds_from_one_observer_spline_fit <- function(
     lst$pred_detect <- predict(
       fit,
       data.frame(distance = dists),
-      formula = ~ spline_detect_func(spline_spde),
+      # clip the predected values
+      formula = ~ pmin(spline_detect_func(spline_spde), 1),
       n.samples = m
     )
   }

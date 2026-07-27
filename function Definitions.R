@@ -112,7 +112,6 @@ detect_func_2_observer_hr <- function(distance, sigmaA, sigmaB, gammaA, gammaB){
 
 dawid_sebastiani_score <- function(post_pred, true_value){
   E <- post_pred$mean
-  # i am not sure if this step is correct
   V <- post_pred$sd^2
   ( (true_value - E)^2 / V)  + log(V)
 }
