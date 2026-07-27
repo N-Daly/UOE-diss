@@ -14,21 +14,6 @@ source("observer models.R")
 source("function Definitions.R")
 
 
-plot_it <- function(pred_df, main = "", true=true_detect_prob, d= dists){
-  plot(
-    d,
-    pred_df$mean,
-    ylim = range(0:1, pred_df$q0.975),
-    main = main,
-    ylab = "Prob of detection",
-    xlab = "distance"
-  )
-  lines(d, pred_df$q0.975)
-  lines(d, pred_df$q0.025)
-
-  lines(d, true, col = "red", lwd =2)
-}
-
 true_sigmaA <- 3; true_sigmaB <- 2; true_range <- 500; true_sigma_grf <- 1
 
 set.seed(800)

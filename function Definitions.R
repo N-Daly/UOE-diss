@@ -33,13 +33,13 @@ log_g_2observer_hn <- function(distance, detected, sigmaA, sigmaB, eps=1e-9){
   log_terms <- numeric(length(detected))
   # A alone
   ii <- detected==1 
-  log_terms[ii] = log_hn(distance[ii], sigmaA) + log1p(-hn(distance[ii], sigmaB)*(1-eps) )
+  log_terms[ii] = log_hn(distance[ii], sigmaA[ii]) + log1p(-hn(distance[ii], sigmaB[ii])*(1-eps) )
   # B alone
   ii <- detected==2
-  log_terms[ii] = log1p(-hn(distance[ii], sigmaA)*(1-eps) ) + log_hn(distance[ii], sigmaB)
+  log_terms[ii] = log1p(-hn(distance[ii], sigmaA[ii])*(1-eps) ) + log_hn(distance[ii], sigmaB[ii])
   # A,B
   ii <- detected==3
-  log_terms[ii] = log_hn(distance[ii], sigmaA) + log_hn(distance[ii], sigmaB)
+  log_terms[ii] = log_hn(distance[ii], sigmaA[ii]) + log_hn(distance[ii], sigmaB[ii])
   
   log_terms
 }
@@ -117,8 +117,51 @@ dawid_sebastiani_score <- function(post_pred, true_value){
   ( (true_value - E)^2 / V)  + log(V)
 }
 
+get_scoring_differences <- function(
+    models,
+    ips,
+    true_detect,
+    true_loglambda
+){
+  base_mod <- models[[1]] # should always be the one observer hn
+  
+  # get the scores of this base model
+  base_mod$DS <- dawid_sebastiani_score(base_mod$pred_loglambda, true_loglambda)
+  
+  base_mod$loglambda_SE <- (base_mod$pred_loglambda$mean - true_loglambda)^2
+  
+  base_mod$lambda_AE <- abs(base_mod$pred_lambda$median - true_loglambda)
+  
+  base_mod$detect_AE <- abs(base_mod$pred_detect$median - true_detect)
+  
+  score_diffs <- NULL
+  for (i in 2:length(models)){
+    mod <- models[[i]]
+    
+    #get this model' scores 
+    mod$DS <- dawid_sebastiani_score(mod$pred_loglambda, true_loglambda)
+    mod$loglambda_SE <- (mod$pred_loglambda$mean - true_loglambda)^2
+    mod$lambda_AE <- abs(mod$pred_lambda$median - true_loglambda)
+    mod$detect_AE <- abs(mod$pred_detect$median - true_detect)
+    
+    # now take the difference in scores between this and the base
+    # and integrate it over the domain
+    mod_diff <- list(
+      DS = sum(ips$weight * (base_mod$DS - mod$DS)),
+      loglambda_SE = sum(ips$weight * (base_mod$loglambda_SE - mod$loglambda_SE)),
+      lambda_AE = sum(ips$weight * (base_mod$lambda_AE - mod$lambda_AE)),
+      detect_AE = mean(base_mod$detect_AE - mod$detect_AE)
+    )
+    
+    mod_diff$model <- mod$name
+    
+    score_diffs <- rbind(score_diffs, mod_diff)
+  }
+  
+  as.data.frame(score_diffs, row.names = F)
+}
 
-######### distance to transect
+######### general utitlities
 dist_to_nearest_line_transect <- function(pts, transects = mexdolphin_sf$samplers){
   
   # this should be in kilometres as the crs is in km units
@@ -129,4 +172,19 @@ dist_to_nearest_line_transect <- function(pts, transects = mexdolphin_sf$sampler
 
 catt <- function(...){ cat(..., "\n")}# pet peeve
 
+# just plot the prediction of detection probabilites
+plot_detect_pred <- function(pred_df, main = "", true=true_detect_prob, d= dists){
+  plot(
+    d,
+    pred_df$mean,
+    ylim = range(0:1, pred_df$q0.975),
+    main = main,
+    ylab = "Prob of detection",
+    xlab = "distance"
+  )
+  lines(d, pred_df$q0.975)
+  lines(d, pred_df$q0.025)
+  
+  lines(d, true, col = "red", lwd =2)
+}
 
