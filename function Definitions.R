@@ -121,7 +121,7 @@ get_scoring_differences <- function(
     ips,
     true_detect,
     true_loglambda,
-    true_avg_prob = mean(true_detect)
+    true_avg_prob_detect = mean(true_detect)
 ){
   base_mod <- models[[1]] # should always be the one observer hn
   
@@ -162,7 +162,14 @@ get_scoring_differences <- function(
     score_diffs <- rbind(score_diffs, mod_diff)
   }
   
-  as.data.frame(score_diffs, row.names = F)
+  res <- as.data.frame(score_diffs)
+  
+  #  wrangling with classes, for some reason the columns are lists
+  j <- which(colnames(res)=="model")
+  res[,j] <- as.character(res[,j])
+  res[,-j] <- apply(res[,-j], 2, as.numeric)
+
+  res
 }
 
 ######### general utitlities

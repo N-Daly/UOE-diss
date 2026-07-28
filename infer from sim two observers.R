@@ -6,6 +6,8 @@ library(sf)
 library(fmesher)
 library(ggplot2)
 library(patchwork)
+library(dplyr)
+
 
 my_dir <- r"(C:\Users\ND\OneDrive - University of Edinburgh\Dissertation\UOE-diss)"
 setwd(my_dir)
@@ -212,6 +214,8 @@ how_verbose = 1
 set.seed(1234)
 nsims <- 20
 results <- NULL
+how_verbose = 0
+
 # for saving the results
 file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "simulation results.rda")
 
@@ -233,7 +237,6 @@ for (i in 1:nsims){
   #the sampled points are in observed_points
   observed_points <- sim_info$samples_df
   list_of_models = list()
-  how_verbose = 0
 
   # Model what A and B saw as a combined observer with a hn detection function
   catt("fitting merged HN")
@@ -313,7 +316,6 @@ for (i in 1:nsims){
   print((end-start)[3])
 
 
-
   rm(fit); invisible(gc())
   # Model what A and B saw as a combined observer with a spline(like) detection function
   catt("fitting spline")
@@ -334,12 +336,9 @@ for (i in 1:nsims){
     list_of_models, ips, true_detect_prob, true_loglambda_at_ip
   )
   
+  results <- bind_rows(results, some_results)
+  
   #save results early just in case
-  results <- rbind(results, some_results)
-  # wrangling with classes
-  results$model <- as.character(results$model)
-  results[-5] <- apply(results[-5], 2, as.numeric)
-
   saveRDS(results, file=file_name)
 }
 
@@ -353,13 +352,12 @@ g <- ggplot(results, aes(fill=model)) +
   expand_limits(y=0) +
   geom_abline(intercept = 0, slope = 0, colour="red", linewidth=2) +
   theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
-ds_ll <-g + geom_boxplot(aes(y=DS)) + labs(title="integrated DS on log lambda")
+ds_ll <-g + geom_boxplot(aes(y=DS_loglambda)) + labs(title="integrated DS on log lambda")
 msep <- g + geom_boxplot(aes(y=loglambda_SE)) + labs(title="integrated SE on mean log lambda")
 maep <- g + geom_boxplot(aes(y=lambda_AE)) + labs(title = "integrated AE on median lambda")
 maedetectp <- g + geom_boxplot(aes(y=detect_AE)) + labs(title="mean AE on detection prob")
 ds_avg_p <- g + geom_boxplot(aes(y=detect_AE)) + labs(title="DS on average detection prob")
 
-(ds_ll + msep) / ( maep + maedetectp)
-
+(ds_ll + msep) / ( maep + ds_avg_p)
 
 
