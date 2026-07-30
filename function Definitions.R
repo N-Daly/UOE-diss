@@ -130,7 +130,7 @@ get_scoring_differences <- function(
   
   base_mod$loglambda_SE <- (base_mod$pred_loglambda$mean - true_loglambda)^2
   
-  base_mod$lambda_AE <- abs(base_mod$pred_lambda$median - true_loglambda)
+  base_mod$lambda_AE <- abs(base_mod$pred_lambda$median - exp(true_loglambda) )
   
   base_mod$detect_AE <- abs(base_mod$pred_detect$median - true_detect)
   
@@ -143,7 +143,7 @@ get_scoring_differences <- function(
     #get this model's scores 
     mod$DS_loglambda <- dawid_sebastiani_score(mod$pred_loglambda, true_loglambda)
     mod$loglambda_SE <- (mod$pred_loglambda$mean - true_loglambda)^2
-    mod$lambda_AE <- abs(mod$pred_lambda$median - true_loglambda)
+    mod$lambda_AE <- abs(mod$pred_lambda$median - exp(true_loglambda) )
     mod$detect_AE <- abs(mod$pred_detect$median - true_detect)
     mod$DS_avg_prob <- dawid_sebastiani_score(mod$pred_avg_prob, true_avg_prob_detect)
     
