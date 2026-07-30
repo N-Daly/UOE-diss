@@ -353,10 +353,50 @@ model_one_observer_hr_fixed_gamma <- function(
   )
 }
 
-get_preds_from_one_observer_hr_fixed_gamma_fit <- function(
+model_one_observer_hr <- function(
+    dd, 
+    ips,
+    prior_on_gamma,
+    bru_initial_params = list(),
+    mtrn_prior = matern_prior, # save memory
+    half_width = 8,
+    bru_verbose = 0
+){
+  
+  cmp <- ~ Intercept(1) +
+    sigma(1,
+          prec.linear = 1,
+          marginal = bm_marginal(qexp, pexp, dexp, rate = 1/half_width) 
+    ) +
+    gamma(
+      1,
+      prec.linear = 1,
+      marginal = prior_on_gamma
+    ) +
+    spde(main=geometry, model = matern_prior)
+  
+  form <- geometry + detected  ~ Intercept  +
+    log_hr(distance, sigma, gamma) + 
+    log(2) + spde
+  
+  
+  fit <- lgcp(
+    components = cmp, 
+    formula = form,
+    data = dd,
+    ips = ips,
+    options = list(
+      bru_verbose = bru_verbose,
+      bru_initial = bru_initial_params,
+      bru_max_iter = 20
+    )
+  )
+}
+
+get_preds_from_one_observer_hr_fit <- function(
     fit,
     ips,
-    fixed_gamma_val,
+    fixed_gamma_val = NULL, # if NULL, gamma is assumed to be a r.v
     desired = c("detect", "lambda", "avg_prob"),
     dists = seq(0,8, length.out=1000),
     m = 1000 # MC samples
@@ -364,6 +404,13 @@ get_preds_from_one_observer_hr_fixed_gamma_fit <- function(
   # assumes the detection functions are defined already
   
   lst <- list()
+  
+  # use the gamma value if given otherwise it should be defined as a model parameter
+  if ( !is.null(fixed_gamma_val) ){
+    gamma <- fixed_gamma_val
+  }
+  
+  
   # log lambda and lambda
   if ( "lambda" %in% desired){
     
@@ -384,7 +431,7 @@ get_preds_from_one_observer_hr_fixed_gamma_fit <- function(
     lst$pred_detect <- predict(
       fit,
       data.frame(distance=dists),
-      formula = ~ hr(distance, sigma, gamma = fixed_gamma_val),
+      formula = ~ hr(distance, sigma, gamma),
       n.samples = m
     )
   }
@@ -396,7 +443,7 @@ get_preds_from_one_observer_hr_fixed_gamma_fit <- function(
     lst$pred_avg_prob <- predict(
       fit,
       detect_ips,
-      formula = ~ sum(detect_ips$weight *hr(distance, sigma, gamma=fixed_gamma_val) ),
+      formula = ~ sum(detect_ips$weight *hr(distance, sigma, gamma) ),
       n.samples = m
     )
   }
@@ -404,6 +451,7 @@ get_preds_from_one_observer_hr_fixed_gamma_fit <- function(
   lst$name <- deparse(substitute(fit))
   lst
 }
+
 
 model_two_observers_hr_fixed_gamma <- function(
     dd, 

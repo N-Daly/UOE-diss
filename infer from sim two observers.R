@@ -136,26 +136,33 @@ how_verbose = 1
 # print((end-start)[3])
 # 
 # 
-# rm(fit); invisible(gc())
-# # Model what A and B saw as a combined observer with a fixed gamma hazard-rate detection function
-# catt("fitting merged HR fixed gamma")
+# # Model what A and B saw as a combined observer with a  hazard-rate detection function
+# catt("fitting merged HR")
 # start <- proc.time()
-# fit <- model_one_observer_hr_fixed_gamma(
-#   observed_points, matern_prior, ips=ips, fixed_gamma_val = 1, bru_verbose = how_verbose
+# fit <- model_one_observer_hr(
+#   observed_points, mtrn_prior =  matern_prior, ips=ips,
+#   prior_on_gamma = bm_marginal(qunif, punif, dunif, min=0.0001, max = 10),
+#   bru_initial_params = list(
+#     sigma = qnorm(pexp(2, rate= 1/8)),
+#     gamma = qnorm(punif(2, min=0.0001, max = 10))
+#   ),
+#   bru_verbose = how_verbose
 # )
 # end <- proc.time()
 # print((end-start)[3])
 # 
 # start <- proc.time()
-# list_of_models$one_obs_HR_fixed_gamma <- get_preds_from_one_observer_hr_fixed_gamma_fit(
-#   fit, ips, fixed_gamma_val = 1
+# list_of_models$one_obs_HR <- get_preds_from_one_observer_hr_fit(
+#   fit, ips
 # )
-# list_of_models$one_obs_HR_fixed_gamma$name <- "one_obs_HR_fixed_gamma"
+# list_of_models$one_obs_HR$name <- "one_obs_HR"
 # end <- proc.time()
 # print((end-start)[3])
 # 
 # 
 # rm(fit); invisible(gc())
+# 
+
 # # Model what A and B saw as a two observer likelihood with hazard-rate detection functions
 # # A unif(.0001, 10) prior on gammaA/B
 # catt("fitting two observer HR")
@@ -199,7 +206,7 @@ how_verbose = 1
 # print((end-start)[3])
 # 
 # rm(fit); invisible(gc())
-# 
+
 # initial_results <- get_scoring_differences(
 #   list_of_models,
 #   ips,
@@ -238,7 +245,8 @@ for (i in 1:nsims){
   observed_points <- sim_info$samples_df
   list_of_models = list()
 
-  # Model what A and B saw as a combined observer with a hn detection function
+  
+  # # Model what A and B saw as a combined observer with a hn detection function
   catt("fitting merged HN")
   start <- proc.time()
   fit <- model_one_observer_hn(
@@ -255,7 +263,7 @@ for (i in 1:nsims){
 
 
   rm(fit); invisible(gc())
-  # Model what A and B saw as a two observer likelihood with hn detection functions
+  # # Model what A and B saw as a two observer likelihood with hn detection functions
   catt("fitting two HN ")
   start <- proc.time()
   fit <- model_two_observers_hn(
@@ -271,26 +279,33 @@ for (i in 1:nsims){
   print((end-start)[3])
 
 
-  rm(fit); invisible(gc())
-  # Model what A and B saw as a combined observer with a fixed gamma hazard-rate detection function
-  catt("fitting merged HR fixed gamma")
+  # Model what A and B saw as a combined observer with a  hazard-rate detection function
+  catt("fitting merged HR")
   start <- proc.time()
-  fit <- model_one_observer_hr_fixed_gamma(
-    observed_points, matern_prior, ips=ips, fixed_gamma_val = 1, bru_verbos = how_verbose
+  fit <- model_one_observer_hr(
+    observed_points, mtrn_prior =  matern_prior, ips=ips,
+    prior_on_gamma = bm_marginal(qunif, punif, dunif, min=0.0001, max = 10),
+    bru_initial_params = list(
+      sigma = qnorm(pexp(2, rate= 1/8)),
+      gamma = qnorm(punif(2, min=0.0001, max = 10))
+    ),
+    bru_verbose = how_verbose
   )
   end <- proc.time()
   print((end-start)[3])
 
   start <- proc.time()
-  list_of_models$one_obs_HR_fixed_gamma <- get_preds_from_one_observer_hr_fixed_gamma_fit(
-    fit, ips, fixed_gamma_val = 1
+  list_of_models$one_obs_HR <- get_preds_from_one_observer_hr_fit(
+    fit, ips
   )
-  list_of_models$one_obs_HR_fixed_gamma$name <- "one_obs_HR_fixed_gamma"
+  list_of_models$one_obs_HR$name <- "one_obs_HR"
   end <- proc.time()
   print((end-start)[3])
 
 
   rm(fit); invisible(gc())
+
+
   # Model what A and B saw as a two observer likelihood with hazard-rate detection functions
   # A unif(.0001, 10) prior on gammaA/B
   catt("fitting two observer HR")
@@ -298,7 +313,7 @@ for (i in 1:nsims){
   fit <- model_two_observers_hr(
     observed_points,
     ips = ips_with_detection_states,
-    bru_verbose=how_verbose,
+    bru_verbose = how_verbose,
     mtrn_prior = matern_prior,
     prior_on_gamma = bm_marginal(qunif, punif, dunif, min=0.0001, max = 10),
     bru_initial_params = list(
@@ -316,6 +331,7 @@ for (i in 1:nsims){
   print((end-start)[3])
 
 
+
   rm(fit); invisible(gc())
   # Model what A and B saw as a combined observer with a spline(like) detection function
   catt("fitting spline")
@@ -331,13 +347,15 @@ for (i in 1:nsims){
   list_of_models$one_obs_spline$name <- "one_obs_spline"
   end <- proc.time()
   print((end-start)[3])
-  
+
+  rm(fit); invisible(gc())
+
   some_results <- get_scoring_differences(
     list_of_models, ips, true_detect_prob, true_loglambda_at_ip
   )
-  
+
   results <- bind_rows(results, some_results)
-  
+
   #save results early just in case
   saveRDS(results, file=file_name)
 }
