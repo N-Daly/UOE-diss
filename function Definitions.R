@@ -150,11 +150,11 @@ get_scoring_differences <- function(
     # now take the difference in scores between this and the base
     # and integrate it over the domain
     mod_diff <- list(
-      DS_loglambda = sum(ips$weight * (base_mod$DS_loglambda - mod$DS_loglambda)),
-      loglambda_SE = sum(ips$weight * (base_mod$loglambda_SE - mod$loglambda_SE)),
-      lambda_AE = sum(ips$weight * (base_mod$lambda_AE - mod$lambda_AE)),
-      detect_AE = mean(base_mod$detect_AE - mod$detect_AE),
-      DS_avg_prob = base_mod$DS_avg_prob - mod$DS_avg_prob
+      DS_loglambda = sum(ips$weight * (mod$DS_loglambda - base_mod$DS_loglambda)),
+      loglambda_SE = sum(ips$weight * (mod$loglambda_SE - base_mod$loglambda_SE)),
+      lambda_AE = sum(ips$weight * (mod$lambda_AE - base_mod$lambda_AE)),
+      detect_AE = mean(mod$detect_AE - base_mod$detect_AE),
+      DS_avg_prob = mod$DS_avg_prob - base_mod$DS_avg_prob
     )
     
     mod_diff$model <- mod$name
