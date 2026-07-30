@@ -143,9 +143,9 @@ model_one_observer_spline <- function(
   
   cmp <- ~ Intercept(1) +
     spline_spde(main=distance, model=detect_matern) +
-    typical_spde(main=geometry, model=matern_prior)
+    spde(main=geometry, model=matern_prior)
   
-  form <- geometry  ~ Intercept  + typical_spde +
+  form <- geometry  ~ Intercept  + spde +
     ln_spline_detect_func(spline_spde)
   
   
@@ -178,8 +178,8 @@ get_preds_from_one_observer_spline_fit <- function(
       fit,
       data.frame(geometry = ips$geometry),
       formula = ~ list(
-        pred_lambda = exp(Intercept  + typical_spde),
-        pred_loglambda = Intercept  + typical_spde
+        pred_lambda = exp(Intercept  + spde),
+        pred_loglambda = Intercept  + spde
       ),
       n.samples = m
     )
