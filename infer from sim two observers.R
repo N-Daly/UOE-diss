@@ -45,16 +45,18 @@ observed_points <- sim_info$samples_df
 # ips
 
 mesh <- mexdolphin_sf$mesh
-mesh_sub <- fm_subdivide(mesh, 4)
-ips <- fm_int(list(geometry=mesh_sub), samplers=st_buffer(mexdolphin_sf$samplers, 8, endCapStyle = "FLAT") )
-ips_with_detection_states <- fm_int(
-  list(geometry=mesh_sub, detected = 1:3),
-  samplers=st_buffer(mexdolphin_sf$samplers, 8, endCapStyle = "FLAT") )
-
-ips_with_detection_states$distance <- dist_to_nearest_line_transect(ips_with_detection_states$geometry, mexdolphin_sf$samplers)
-ips$distance <- dist_to_nearest_line_transect(ips$geometry, mexdolphin_sf$samplers)
-rm(mesh_sub)
+# mesh_sub <- fm_subdivide(mesh, 4)
+# ips <- fm_int(list(geometry=mesh_sub), samplers=st_buffer(mexdolphin_sf$samplers, 8, endCapStyle = "FLAT") )
+# ips_with_detection_states <- fm_int(
+#   list(geometry=mesh_sub, detected = 1:3),
+#   samplers=st_buffer(mexdolphin_sf$samplers, 8, endCapStyle = "FLAT") )
 # 
+# ips_with_detection_states$distance <- dist_to_nearest_line_transect(ips_with_detection_states$geometry, mexdolphin_sf$samplers)
+# ips$distance <- dist_to_nearest_line_transect(ips$geometry, mexdolphin_sf$samplers)
+# rm(mesh_sub)
+ips <- readRDS("ips subdivided default by 4")
+ips_with_detection_states <- readRDS("ips with detect subdivided default by 4.rda")
+
 # mesh <- readRDS("mesh20-july from hex e6 20 only.rda")
 # ips <- readRDS("ips20-july from hex e1-5 20 only.rda")
 # ips_with_detection_states <- readRDS("ipsdetected20-july from hex e1-5 20 only.rda")
@@ -103,7 +105,7 @@ how_verbose = 1
 
 ######## fitting models
 
-# # # Model what A and B saw as a combined observer with a hn detection function
+# # Model what A and B saw as a combined observer with a hn detection function
 # catt("fitting merged HN")
 # start <- proc.time()
 # fit <- model_one_observer_hn(
@@ -111,14 +113,14 @@ how_verbose = 1
 # )
 # end <- proc.time()
 # print((end-start)[3])
-# 
+
 # start <- proc.time()
 # list_of_models$one_obs_hn <- get_preds_from_one_observer_hn_fit(fit, ips)
 # list_of_models$one_obs_hn$name <- "one_obs_hn"
 # end <- proc.time()
 # print((end-start)[3])
-# 
-# 
+
+
 # rm(fit); invisible(gc())
 # # # Model what A and B saw as a two observer likelihood with hn detection functions
 # catt("fitting two HN ")
@@ -128,15 +130,15 @@ how_verbose = 1
 # )
 # end <- proc.time()
 # print((end-start)[3])
-# 
+
 # start <- proc.time()
 # list_of_models$two_obs_hn <- get_preds_from_two_observers_hn_fit(fit, ips)
 # list_of_models$two_obs_hn$name <- "two_obs_hn"
 # end <- proc.time()
 # print((end-start)[3])
-# 
-# 
-# # Model what A and B saw as a combined observer with a  hazard-rate detection function
+
+
+# Model what A and B saw as a combined observer with a  hazard-rate detection function
 # catt("fitting merged HR")
 # start <- proc.time()
 # fit <- model_one_observer_hr(
@@ -150,7 +152,7 @@ how_verbose = 1
 # )
 # end <- proc.time()
 # print((end-start)[3])
-# 
+
 # start <- proc.time()
 # list_of_models$one_obs_HR <- get_preds_from_one_observer_hr_fit(
 #   fit, ips
@@ -161,8 +163,8 @@ how_verbose = 1
 # 
 # 
 # rm(fit); invisible(gc())
-# 
 
+# 
 # # Model what A and B saw as a two observer likelihood with hazard-rate detection functions
 # # A unif(.0001, 10) prior on gammaA/B
 # catt("fitting two observer HR")
@@ -180,15 +182,15 @@ how_verbose = 1
 # )
 # end <- proc.time()
 # print((end-start)[3])
-# 
+
 # start <- proc.time()
 # list_of_models$two_obs_HR <- get_preds_from_two_observers_hn_fit(fit, ips)
 # list_of_models$two_obs_HR$name <- "two_obs_HR"
 # end <- proc.time()
 # print((end-start)[3])
-# 
-# 
-# 
+
+
+
 # rm(fit); invisible(gc())
 # # Model what A and B saw as a combined observer with a spline(like) detection function
 # catt("fitting spline")
@@ -198,15 +200,15 @@ how_verbose = 1
 # )
 # end <- proc.time()
 # print((end-start)[3])
-# 
+
 # start <- proc.time()
 # list_of_models$one_obs_spline <- get_preds_from_one_observer_spline_fit(fit, ips)
 # list_of_models$one_obs_spline$name <- "one_obs_spline"
 # end <- proc.time()
 # print((end-start)[3])
-# 
-# rm(fit); invisible(gc())
 
+# rm(fit); invisible(gc())
+# 
 # initial_results <- get_scoring_differences(
 #   list_of_models,
 #   ips,
@@ -219,7 +221,7 @@ how_verbose = 1
 
 ############## Repeated simulations
 set.seed(1234)
-nsims <- 20
+nsims <- 3
 results <- NULL
 how_verbose = 0
 
@@ -245,7 +247,7 @@ for (i in 1:nsims){
   observed_points <- sim_info$samples_df
   list_of_models = list()
 
-  
+
   # # Model what A and B saw as a combined observer with a hn detection function
   catt("fitting merged HN")
   start <- proc.time()
@@ -364,7 +366,7 @@ for (i in 1:nsims){
 # plot the difference in scores, a difference of zero implies the models perform the same wrt to that score
 # all scores are negatively orientated so a positive difference means the simpler merged observer model
 # performed worse
-# results <- readRDS("18-07-2026 19-13 simulation results.rda")
+# results <- readRDS("28-07-2026 15-22 simulation results.rda")
 
 g <- ggplot(results, aes(fill=model)) +
   expand_limits(y=0) +
@@ -377,5 +379,3 @@ maedetectp <- g + geom_boxplot(aes(y=detect_AE)) + labs(title="mean AE on detect
 ds_avg_p <- g + geom_boxplot(aes(y=detect_AE)) + labs(title="DS on average detection prob")
 
 (ds_ll + msep) / ( maep + ds_avg_p)
-
-
