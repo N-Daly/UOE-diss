@@ -18,14 +18,13 @@ source("function Definitions.R")
 
 ########### simulate the ground truth
 
-true_sigmaA <- 4; true_sigmaB <- 2; true_range <- 500; true_sigma_grf <- 1
+true_sigmaA <- 1.75; true_sigmaB <- 2; true_gammaA <- 1; true_gammaB <- 4
+true_range <- 500; true_sigma_grf <- 1
 
 set.seed(800)
 # simulate a ground truth
-sim_info <- simulate_lcgp_distance_thinning(
-  detect_func = hn,
-  detect_func_paramA = true_sigmaA,
-  detect_func_paramB = true_sigmaB,
+sim_info <- simulate_lcgp_dual_obs_HR_thinning(
+  true_sigmaA, true_sigmaB, true_gammaA, true_gammaB,
   true_beta0 = -5,
   true_rho = true_range, true_sigma_GRF=true_sigma_grf
 )
@@ -69,7 +68,7 @@ dists <- seq(0,8, length.out=500)
 
 
 # for model scoring later
-true_detect_prob = detect_func_2observer_sigma(dists, true_sigmaA, true_sigmaB)
+true_detect_prob = detect_func_2observer_hn(dists, true_sigmaA, true_sigmaB)
 true_loglambda_at_ip <- c( fm_evaluate(mexdolphin_sf$mesh, field = sim_info$log_lambda, loc = ips$geometry) )
 list_of_models <- list()
 how_verbose = 1
@@ -195,7 +194,7 @@ how_verbose = 1
 set.seed(1234)
 nsims <- 3
 results <- NULL
-how_verbose = 1
+how_verbose = 0
 
 # for saving the results
 file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "simulation results.rda")

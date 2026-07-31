@@ -116,22 +116,31 @@ simulate_lcgp_distance_thinning <- function(
   output_list
 }
 
-# 
-# ss <- simulate_lcgp(true_beta0=-5)
-# boxplot(ss$samples_df$distance)
-# 
-# plot(ss$the_mesh)
-# plot(ss$samples_df$geometry, add=T)
-# nrow(ss$samples_df)
-# plot(mexdolphin_sf$samplers$geometry, add = T, col = "red")
-# 
-# 
-# simulate_lcgp_constant_thinning(.5,.7)
-# 
-# simulate_lcgp_distance_thinning(
-#   detect_func = function(distance, sigma){ exp(-0.5 * (distance / sigma)^2 ) },
-#   detect_func_paramA = 3, detect_func_paramB = 7
-# )
+simulate_lcgp_dual_obs_HR_thinning <- function(
+    true_sigmaA, true_sigmaB, true_gammaA, true_gammaB,
+    ...
+){
 
-
-
+  output_list <- simulate_lcgp(...)
+  samples_df <- output_list$samples_df
+  
+  
+  # thin the process with probabilities given by the hazard rate detection function
+  pA <- hr(samples_df$distance, true_sigmaA, true_gammaA)
+  pB <- hr(samples_df$distance, true_sigmaB, true_gammaB)
+  
+  samples_df$detectA <- runif(nrow(samples_df)) <= pA
+  samples_df$detectB <- runif(nrow(samples_df)) <= pB
+  
+  ii <- ( samples_df$detectA | samples_df$detectB ) 
+  
+  samples_df <- samples_df[ii,]
+  
+  #preprocessing for detection states
+  samples_df$detected <- 3
+  samples_df$detected[ samples_df$detectA  & !samples_df$detectB ] = 1
+  samples_df$detected[ !samples_df$detectA & samples_df$detectB ] = 2
+  
+  output_list$samples_df <- samples_df
+  output_list
+}
