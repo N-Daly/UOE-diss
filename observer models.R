@@ -327,6 +327,7 @@ model_one_observer_hr_fixed_gamma <- function(
     bru_verbose = 0,
     fixed_gamma_val = 1
 ){
+  matern_prior <- mtrn_prior
   
   cmp <- ~ Intercept(1) +
     sigma(1,
@@ -335,7 +336,7 @@ model_one_observer_hr_fixed_gamma <- function(
     ) +
     spde(main=geometry, model = matern_prior)
   
-  form <- geometry + detected  ~ Intercept  +
+  form <- geometry ~ Intercept  +
     log_hr(distance, sigma, gamma=fixed_gamma_val) + 
     log(2) + spde
   
@@ -362,6 +363,7 @@ model_one_observer_hr <- function(
     half_width = 8,
     bru_verbose = 0
 ){
+  matern_prior <- mtrn_prior
   
   cmp <- ~ Intercept(1) +
     sigma(1,
@@ -373,9 +375,9 @@ model_one_observer_hr <- function(
       prec.linear = 1,
       marginal = prior_on_gamma
     ) +
-    spde(main=geometry, model = matern_prior)
+    spde(main=geometry, model = mtrn_prior)
   
-  form <- geometry + detected  ~ Intercept  +
+  form <- geometry ~ Intercept  +
     log_hr(distance, sigma, gamma) + 
     log(2) + spde
   
@@ -461,7 +463,7 @@ model_two_observers_hr_fixed_gamma <- function(
     bru_verbose = 0,
     fixed_gamma_val = 1
 ){
-  
+  matern_prior <- mtrn_prior
   lambda_sigma <- 2/half_width
   
   cmp <- ~ Intercept(1) +
@@ -510,7 +512,7 @@ model_two_observers_hr <- function(
     half_width = 8,
     bru_verbose = 0
 ){
-  
+  matern_prior <- mtrn_prior
   lambda_sigma <- 1/half_width
   
   bru_initial_params$sigmaA <- qnorm(pexp(2, lambda_sigma))
