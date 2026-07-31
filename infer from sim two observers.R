@@ -36,38 +36,10 @@ observed_points <- sim_info$samples_df
 ############## modelling
 
 ######## set up before modelling
-# mesh <- readRDS("mesh20-july qual loc 2-20.rda")
-# start <- proc.time()
-# ips <- fm_int( mesh, samplers=sim_info$buffered_transects$geometry)
-# ips$distance <- dist_to_nearest_line_transect(ips$geometry, mexdolphin_sf$samplers)
-# end <- proc.time()
-# print((end-start)[3])
-# ips
+mesh <- readRDS("mesh hex lat edge 60.rda")
 
-mesh <- mexdolphin_sf$mesh
-# mesh_sub <- fm_subdivide(mesh, 4)
-# ips <- fm_int(list(geometry=mesh_sub), samplers=st_buffer(mexdolphin_sf$samplers, 8, endCapStyle = "FLAT") )
-# ips_with_detection_states <- fm_int(
-#   list(geometry=mesh_sub, detected = 1:3),
-#   samplers=st_buffer(mexdolphin_sf$samplers, 8, endCapStyle = "FLAT") )
-# 
-# ips_with_detection_states$distance <- dist_to_nearest_line_transect(ips_with_detection_states$geometry, mexdolphin_sf$samplers)
-# ips$distance <- dist_to_nearest_line_transect(ips$geometry, mexdolphin_sf$samplers)
-# rm(mesh_sub)
-ips <- readRDS("ips subdivided default by 4")
-ips_with_detection_states <- readRDS("ips with detect subdivided default by 4.rda")
-
-# mesh <- readRDS("mesh20-july from hex e6 20 only.rda")
-# ips <- readRDS("ips20-july from hex e1-5 20 only.rda")
-# ips_with_detection_states <- readRDS("ipsdetected20-july from hex e1-5 20 only.rda")
-
-# ips <- st_as_sf( readRDS("ips_interiorTransects_2subdivisions.rda") )
-
-# so the one observer models have only a geometry dimension
-# the two observer model needs a detection state dimension - who spotted the animal
-# here i naively expand the existing ips uniformly across this dimension
-# fingers crossed
-
+ips <- readRDS("ips make_spatially_varying_mesh3 hex edge length 2-30.rda")
+ips_with_detection_states <- readRDS("ips_with_detect make_spatially_varying_mesh3 hex edge length 2-30.rda")
 
 matern_prior <- inla.spde2.pcmatern(
   mesh,
@@ -93,7 +65,7 @@ detect_matern <- inla.spde2.pcmatern(
   )
 )
 
-dists <- seq(0,8, length.out=1000)
+dists <- seq(0,8, length.out=500)
 
 
 # for model scoring later
@@ -223,7 +195,7 @@ how_verbose = 1
 set.seed(1234)
 nsims <- 3
 results <- NULL
-how_verbose = 0
+how_verbose = 1
 
 # for saving the results
 file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "simulation results.rda")
