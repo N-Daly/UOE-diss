@@ -13,6 +13,7 @@ setwd(my_dir)
 source("simulate 2D ground truth.R")
 source("observer models.R")
 source("function Definitions.R")
+source("observer models.R")
 
 ### get some data
 
@@ -26,6 +27,15 @@ sim_info <- simulate_lcgp(
 pts <- sim_info$samples_df
 actual_distance <- pts$distance
 
+
+set.seed(123)
+sim_info <- simulate_lcgp_distance_thinning(
+  detect_func = hn,
+  detect_func_paramA = 1,
+  detect_func_paramB = 4,
+  true_beta0 = -5,
+  true_rho = 500, true_sigma_GRF=1
+)
 
 get_nonoverlapping_samplers <- function(ltransects=mexdolphin_sf$samplers){
 
@@ -84,38 +94,26 @@ plot_results <- function(reconstructed, actual = actual_distance){
 # fit some model to see how long it takes with a given ips from a mesh
 fit_model_with_it <- function(mesh, ips){
   
-  hn <- function(distance, sigma){  exp(-0.5 * (distance/sigma)^2 )  }
-  log_hn <-  function(distance, sigma){ -0.5 * (distance/sigma)^2 }
   
+  coarse_hex <- fm_hexagon_lattice(mexdolphin_sf$ppoly, edge_len = 30)
+  coarse_mesh <- fm_mesh_2d(coarse_hex, crs= fm_crs(mexdolphin_sf$mesh))
+
   matern_prior <- inla.spde2.pcmatern(
-    sim_info$the_mesh, # the integration scheme is on a finer resolution than the model
+    coarse_mesh, # the integration scheme is on a finer resolution than the model
     prior.range = c(600, 0.1), # true rho is 500
     prior.sigma = c(.5, 0.5)   # true sigma is 1
   )
-  
-  half_width <- 8
-  
-  cmp <- ~ Intercept(1) +
-    sigma(1,
-          prec.linear = 1,
-          marginal = bm_marginal(qexp, pexp, dexp, rate = 1/half_width) #need to think more about this - effect on detection at end of halfwidth
-    ) +
-    spde(main=geometry, model = matern_prior)
-  
-  form <- geometry  ~ Intercept  +
-    log_hn(distance, sigma) +
-    log(2)+ spde
-  
-  
-  fit <- lgcp(
-    components = cmp,
-    formula = form,
-    data =  sim_info$samples_df,
-    ips = ips,
-    options = list(bru_verbose= 0,
-                   # verbose = 4,
-                   bru_initial = list(sigma = half_width/4) # need to review this 
-    )
+
+  fit <- model_one_observer_hr(
+    dd = sim_info$samples_df,
+    mtrn_prior =  matern_prior,
+    ips=ips,
+    prior_on_gamma = bm_marginal(qunif, punif, dunif, min=0.0001, max = 10),
+    bru_initial_params = list(
+      sigma = qnorm(pexp(2, rate= 1/8)),
+      gamma = qnorm(punif(2, min=0.0001, max = 10))
+    ),
+    bru_verbose = 1
   )
   
   fit
@@ -150,7 +148,7 @@ make_spatially_varying_mesh <- function(num_vertices){
   }
 
   # a grid of points across the study region, 40km apart
-  seed_points <- fm_hexagon_lattice(sim_info$boundary, edge_len = 40)
+  seed_points <- fm_hexagon_lattice(st_buffer(sim_info$boundary, 100), edge_len = 40)
 
   # also include points on the line transects themselves
   # so that in the following delauney triangulation the transects will be better captured
@@ -163,8 +161,8 @@ make_spatially_varying_mesh <- function(num_vertices){
   # no triangle angles smaller than 23 degrees
   # there is some user set number of triangles, once reached the algorithm starts resizing edge lengths
   mesh <- fm_rcdt_2d(
-    loc = seed_points
-    , extend = list(offset=-.1),
+    loc = seed_points,
+    ext= fm_nonconvex_hull(seed_points, convex=100),
     refine = list(
       min.angle = 23,
       max.n = num_vertices*1000
@@ -187,9 +185,9 @@ make_spatially_varying_mesh2 <- function(param){
   
   mesh1 <- fm_rcdt_2d(
     loc = seed_points,
-    boundary = mexdolphin_sf$ppoly,
+    boundary = fm_nonconvex_hull(seed_points, convex=100),
     refine=F,
-    extend = list(offset = -0.1),
+    # extend = list(offset = -0.2),
     crs = mexdolphin_sf$mesh$crs
   )
 
@@ -348,15 +346,42 @@ different_setups <- list(
   list(func=make_spatially_varying_mesh, params=1:15*10, subtitle = "number of vertices in each mesh, in 1000s")
 )
 
-par(mfrow=c(1,3))
 for (setup in different_setups){
   results <- test_param_tradeoff(
-    setup$func, 
+    setup$func,
     setup$params,
     setup$subtitle,
     verbose = F
   )
 }
 
+# m <- make_spatially_varying_mesh3(2)
+# saveRDS(m, "mesh make_spatially_varying_mesh3 hex edge length 2-30.rda")
+# ips <- fm_int(
+#   list(geometry=m),
+#   samplers = sim_info$buffered_transects
+# )
+# ips$distance = dist_to_nearest_line_transect(ips$geometry)
+# saveRDS(ips, "ips make_spatially_varying_mesh3 hex edge length 2-30.rda")
+# rm(ips); gc()
+# 
+# ips <- fm_int(
+#   list(geometry=m, detected=1:3),
+#   samplers = sim_info$buffered_transects
+# )
+# ips$distance = dist_to_nearest_line_transect(ips$geometry)
+# saveRDS(ips, "ips_with_detect make_spatially_varying_mesh3 hex edge length 2-30.rda")
 
+# sanity check all meshes cover the nominal study area
 
+# coarse_hex <- fm_hexagon_lattice(mexdolphin_sf$ppoly, edge_len = 30)
+# coarse_mesh <- fm_mesh_2d(coarse_hex, crs= fm_crs(mexdolphin_sf$mesh))
+
+# mm <- make_spatially_varying_mesh(10)
+# ggplot() + gg(mm) + gg(coarse_mesh, edge.color = "red")
+# 
+# mm <- make_spatially_varying_mesh2(0)
+# ggplot() + gg(mm) + gg(coarse_mesh, edge.color = "red")
+#  
+# mm <- make_spatially_varying_mesh3(5)
+# ggplot() + gg(mm) + gg(coarse_mesh, edge.color = "red")
