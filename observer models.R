@@ -271,7 +271,7 @@ get_preds_from_two_observers_hn_fit <- function(
     lst$pred_avg_prob <- predict(
       fit,
       detect_ips,
-      formula = ~ sum(detect_ips$weight *detect_func_2observer_sigma(distance, sigmaA, sigmaB) ),
+      formula = ~ sum(detect_ips$weight *detect_func_2observer_hn(distance, sigmaA, sigmaB) ),
       n.samples = m
     )
   }
