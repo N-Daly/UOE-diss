@@ -12,23 +12,20 @@ my_dir <- r"(C:\Users\ND\OneDrive - University of Edinburgh\Dissertation\UOE-dis
 setwd(my_dir)
 source("simulate 2D ground truth.R")
 source("observer models.R")
-
+source("function Definitions.R")
 
 ### get some data
-hn <- function(distance, sigma){  exp(-0.5 * (distance/sigma)^2 )  }
-log_hn <-  function(distance, sigma){ -0.5 * (distance/sigma)^2 }
+
 
 set.seed(123)
-sim_info <- simulate_lcgp_distance_thinning(
-  detect_func = hn,
-  detect_func_paramA = 4,
-  detect_func_paramB = 0,
+sim_info <- simulate_lcgp(
   true_beta0 = -5,
   true_rho = 500, true_sigma_GRF=1
 )
 
 pts <- sim_info$samples_df
 actual_distance <- pts$distance
+
 
 get_nonoverlapping_samplers <- function(ltransects=mexdolphin_sf$samplers){
 
@@ -50,8 +47,6 @@ get_nonoverlapping_samplers <- function(ltransects=mexdolphin_sf$samplers){
   }
   ltransects[nonoverlapping,]
 }
-
-nonoverlapping <- get_nonoverlapping_samplers()
 
 # reconstruct the points' perpendicular distance using the mesh
 eval_mesh <- function(a_mesh){
@@ -182,8 +177,10 @@ make_spatially_varying_mesh <- function(num_vertices){
   mesh
 }
 
-make_spatially_varying_mesh2 <- function(param, transects){
+make_spatially_varying_mesh2 <- function(param){
 
+  nonoverlapping <- get_nonoverlapping_samplers()
+  
   hex_points <- fm_hexagon_lattice(mexdolphin_sf$ppoly, edge_len = 20)
   transect_points <- st_cast(nonoverlapping$geometry, "POINT")
   seed_points <- c(transect_points, hex_points)
@@ -232,122 +229,134 @@ make_spatially_varying_mesh2 <- function(param, transects){
 }
 
 
-make_spatially_varying_mesh3 <- function(line_transects, subdivisions=0){
+make_spatially_varying_mesh3 <- function(hex_length, subdivisions=0){
   
   # buffer the transects a bit farther than the halfwidth
-  bt <- st_buffer(line_transects, 8*1.25)
+  bt <- st_buffer(mexdolphin_sf$samplers, 8*1.25)
   
   # make a fine lattice within the transect segments
-  hex_points <- fm_hexagon_lattice(bt, edge_len = 1.5)
+  hex_points <- fm_hexagon_lattice(bt, edge_len = hex_length)
   
   # make a coarse lattice over the whole region to attempt to keep regularity
-  extra_hex_points <- fm_hexagon_lattice(mexdolphin_sf$ppoly, edge_len = 20)
+  extra_hex_points <- fm_hexagon_lattice(mexdolphin_sf$ppoly, edge_len = 2*3*5)
   
   # combine the two as seed points
   seed_points <- c(hex_points, extra_hex_points)
   
+  bbox <- st_bbox(seed_points)
+  
+  extension_amount <- min( bbox$ymax-bbox$ymin, bbox$xmax-bbox$xmin  )/5
+  
+  ext <- fm_extensions(
+    seed_points,
+    convex = extension_amount
+  )
+  
   # make a relatively simple mesh from the lattices' points
   mm <- fm_mesh_2d(
     loc=seed_points,
+    exterior = ext[[1]],
     min.angle = 27,
-    crs = fm_crs(line_transects)
+    crs = st_crs(mexdolphin_sf$samplers)
   )
   
-  if (subdivisions ==0){
+  
+  
+  if (subdivisions == 0){
     mm
   } else {
     fm_subdivide(mm, n = subdivisions)
   }
 }
 
+test_param_tradeoff <- function(mesh_maker, params, subtitle, verbose=T){
 
-#c(100, 50, 30, 25, 20) 
-fit_time <- NULL
-param <- NULL
-error <- NULL
-#seq(10,60, by=5)
-for (i in 0:3){
-  cat("\n param =", i, "\n")
+  fit_time <- NULL
+  error <- NULL
   
-  rm(m, ips, some_model_fit); gc()
-  start <- proc.time()
-  cat("making mesh and ips \n")
-  
-  m <- make_spatially_varying_mesh2(i, nonoverlapping)
-  approx_dist <- eval_mesh(m)
+  for (param in params){
+    cat("\n param =", param, "\n")
+    
+    rm(m, ips, some_model_fit); gc()
+    
+    start <- proc.time()
+    cat("making mesh and ips \n")
+    
+    m <- mesh_maker( param )
 
-  ips <- fm_int(
-    m, samplers = sim_info$buffered_transects
+    approx_dist <- eval_mesh(m)
+  
+    ips <- fm_int(
+      m, samplers = sim_info$buffered_transects
+    )
+    ips$distance <- dist_to_nearest_line_transect(ips$geometry, sim_info$line_transects)
+    
+    end <- proc.time()
+    print( (end-start)[3])
+    
+    #plot the error
+    if (verbose){
+      mpe <- plot_results(approx_dist)
+      mtext(paste("param=", param, "# vertices =", nrow(fm_vertices(m)) ))
+    } else {
+      mpe <- mean( abs(actual_distance-approx_dist)/actual_distance )
+    }
+    
+    
+    #fit a simple model with spatial random effect and hn detection function
+    start <- proc.time()
+    some_model_fit <- fit_model_with_it(m, ips)
+    end <- proc.time()
+    run_time <- (end-start)[[3]]
+    print( (end-start)[3])
+  
+    
+    #record stats
+    fit_time <- c(fit_time, run_time)
+    error <- c(error, mpe)
+    
+  }
+
+  # i dont see a way of doing this in ggplot, nor do i see a potential benefit
+  plot(
+    error, 
+    fit_time,
+    ylim = range(0, fit_time),
+    xlim = range(0, error),
+    type = "c", # lines near but not connecting each point
+    xlab = "MAPE as %",
+    ylab = "fitting time in seconds",
+    main = "Trade off between computational time and mesh quality"
   )
-  ips$distance <- dist_to_nearest_line_transect(ips$geometry, sim_info$line_transects)
+  text(
+    error, 
+    fit_time,
+    labels = params,
+    col = rainbow(length(error)),
+    cex=1.5
+  )
+  subtitle <- paste("Number indicates", subtitle)
+  mtext(subtitle)
   
-  end <- proc.time()
-  print( (end-start)[3])
-  
-  #plot the error
-  mpe <- plot_results(approx_dist)
-  mtext(paste("param=",i, "# vertices =", nrow(fm_vertices(m)) ))
-  
-  
-  #fit a simple model with spatial random effect and hn detection function
-  start <- proc.time()
-  some_model_fit <- fit_model_with_it(m, ips)
-  end <- proc.time()
-  run_time <- (end-start)[[3]]
-  print( (end-start)[3])
-  
-  # there was no meaningful variation in repeated timings
-  
-  # repeated_fits <- repeated_model_fitting(mesh, ips)
-  # boxplot(repeated_fits$fit_times, ylim=range(0, repeated_fits$fit_times))
-  # run_time <- median(repeated_fits$fit_times)
-  # cat("median fitting time ", round(run_time), "\n")
-  # # this is just to have a model fit close to hand
-  # some_model_fit <- repeated_fits$last_model
-  
-  #record stats
-  fit_time <- c(fit_time, run_time)
-  param <- c(param, i)
-  error <- c(error, mpe)
-  
-  # quick save results in case R conks out on a big mesh
-  # save(fit_time, param, error, file="nospec_then_subdivide_quicksave.rda")
+  data.frame(fit_time=fit_time, error=error, param=param)
+
 }
-# load("27quicksave.rda")
 
-# i dont see a way of doing this in ggplot, not do i see a potential benefit
-plot(
-  error, 
-  fit_time,
-  ylim = range(0, fit_time),
-  xlim = range(0, error),
-  type = "c", # lines near but not connecting each point
-  xlab = "MAPE as %",
-  ylab = "fitting time in seconds",
-  main = "Trade off between computational time and mesh quality"
-)
-mtext("Number indicates the number of subdivisions performed in each mesh")
-text(
-  error, 
-  fit_time,
-  labels = param,
-  col = rainbow(length(error)),
-  cex=1.5
+different_setups <- list(
+  list(func=make_spatially_varying_mesh3, params=5:1, subtitle = "lattice edge lengths within transect segments"),
+  list(func=make_spatially_varying_mesh2, params=0:4, subtitle = "further mesh subdivisions"),
+  list(func=make_spatially_varying_mesh, params=1:15*10, subtitle = "number of vertices in each mesh, in 1000s")
 )
 
-# dont run this with large meshes
-# ggplot() + gg(m) + gg(sim_info$boundary, color="red", alpha=.2) +
-#   gg(sim_info$buffered_transects, color="brown", alpha=.2)+
-#   ggspatial::annotation_scale(location="tr")
+par(mfrow=c(1,3))
+for (setup in different_setups){
+  results <- test_param_tradeoff(
+    setup$func, 
+    setup$params,
+    setup$subtitle,
+    verbose = F
+  )
+}
 
-m <- make_spatially_varying_mesh2(2, nonoverlapping)
-approx_dist <- eval_mesh(m)
-
-ips <- fm_int(
-  m, samplers = sim_info$buffered_transects
-)
-ips$distance <- dist_to_nearest_line_transect(ips$geometry, sim_info$line_transects)
-saveRDS(ips, "ips_interiorTransects_2subdivisions.rda")
-getwd()
 
 
