@@ -83,7 +83,7 @@ ln_spline_detect_func <- function(spline_effect){ -spline_effect }
 
 ####### the probability of detection at a given distance with given parameters
 
-detect_func_2observer_sigma <- function(distance, sigmaA, sigmaB){
+detect_func_2observer_hn <- function(distance, sigmaA, sigmaB){
   #ln( (1-pA)(1-pB) )
   log_terms <- log1p( -hn(distance, sigmaA) ) + log1p( -hn(distance, sigmaB) )
   # cant think of a better way to do this bit
