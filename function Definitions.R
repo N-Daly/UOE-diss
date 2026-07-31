@@ -41,19 +41,14 @@ log_g_2observer_hn <- function(distance, detected, sigmaA, sigmaB, eps=1e-9){
   ii <- detected==3
   log_terms[ii] = log_hn(distance[ii], sigmaA[ii]) + log_hn(distance[ii], sigmaB[ii])
   
-  log_terms
+  # this is the normalising constant to make the terms probabilities
+  # i.e what is the prob of detected=i given the object was detected at all?
+  log_any_detection <- log1p( -(1-hn(distance, sigmaA))*(1-hn(distance, sigmaB)) )
+  
+  log_terms - log_any_detection
 }
 
 log_g_2observer_hr <- function(distance, detected, sigmaA, sigmaB, gammaA, gammaB, eps=1e-9){
-  # 
-  # cat(
-  #   "log g arg lengths: dist", length(distance),
-  #   "detect", length(detected),
-  #   "sigmaA, sigmaB", length(sigmaA), length(sigmaB),
-  #   "gammaA, gammaB", length(gammaA), length(gammaB),
-  #   "\n"
-  # )
-  # 
 
   if( length(sigmaA) == 1 & length(distance) > 1){
     sigmaA <- rep(sigmaA, length(distance))
@@ -76,7 +71,11 @@ log_g_2observer_hr <- function(distance, detected, sigmaA, sigmaB, gammaA, gamma
   ii <- detected==3
   log_terms[ii] =  log_hr(distance[ii], sigmaA[ii], gammaA[ii]) + hr(distance[ii], sigmaB[ii], gammaB[ii])
   
-  log_terms
+  # this is the normalising constant to make the terms probabilities
+  # i.e what is the prob of detected=i given the object was detected at all?
+  log_any_detection <- log1p( -(1-hr(distance, sigmaA, gammaA))*(1-hr(distance, sigmaB, gammaB)) )
+  
+  log_terms - log_any_detection
 }
 
 spline_detect_func <- function(spline_effect){ exp(-spline_effect) }
