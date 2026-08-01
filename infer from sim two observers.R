@@ -347,6 +347,6 @@ ds_ll <-g + geom_boxplot(aes(y=DS_loglambda)) + labs(title="integrated DS on log
 msep <- g + geom_boxplot(aes(y=loglambda_SE)) + labs(title="integrated SE on mean log lambda")
 maep <- g + geom_boxplot(aes(y=lambda_AE)) + labs(title = "integrated AE on median lambda")
 maedetectp <- g + geom_boxplot(aes(y=detect_AE)) + labs(title="mean AE on detection prob")
-ds_avg_p <- g + geom_boxplot(aes(y=DS_avg_p)) + labs(title="DS on average detection prob")
+ds_avg_p <- g + geom_boxplot(aes(y=DS_avg_prob)) + labs(title="DS on average detection prob")
 
 (ds_ll + msep) / ( maep + ds_avg_p)
