@@ -114,10 +114,10 @@ how_verbose = 1
 # start <- proc.time()
 # fit <- model_one_observer_hr(
 #   observed_points, mtrn_prior =  matern_prior, ips=ips,
-#   prior_on_gamma = bm_marginal(qunif, punif, dunif, min=0.0001, max = 10),
+#   prior_on_gamma = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
 #   bru_initial_params = list(
 #     sigma = qnorm(pexp(2, rate= 1/8)),
-#     gamma = qnorm(punif(2, min=0.0001, max = 10))
+#     gamma = qnorm(pgamma(2, shape=2, rate=1))
 #   ),
 #   bru_verbose = how_verbose
 # )
@@ -145,10 +145,10 @@ how_verbose = 1
 #   ips = ips_with_detection_states,
 #   bru_verbose = how_verbose,
 #   mtrn_prior = matern_prior,
-#   prior_on_gamma = bm_marginal(qunif, punif, dunif, min=0.0001, max = 10),
+#   prior_on_gamma = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
 #   bru_initial_params = list(
-#     gammaA = qnorm(punif(2, min=0.0001, max = 10)),
-#     gammaB = qnorm(punif(2, min=0.0001, max = 10))
+#     gammaA = qnorm(pgamma(2, shape=2, rate=1)),
+#     gammaB = qnorm(pgamma(2, shape=2, rate=1))
 #   )
 # )
 # end <- proc.time()
@@ -192,7 +192,7 @@ how_verbose = 1
 
 ############## Repeated simulations
 set.seed(1234)
-nsims <- 3
+nsims <- 30
 results <- NULL
 how_verbose = 0
 
@@ -257,10 +257,10 @@ for (i in 1:nsims){
   start <- proc.time()
   fit <- model_one_observer_hr(
     observed_points, mtrn_prior =  matern_prior, ips=ips,
-    prior_on_gamma = bm_marginal(qunif, punif, dunif, min=0.0001, max = 10),
+    prior_on_gamma = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
     bru_initial_params = list(
       sigma = qnorm(pexp(2, rate= 1/8)),
-      gamma = qnorm(punif(2, min=0.0001, max = 10))
+      gamma = qnorm(pgamma(2, shape=2, rate=1))
     ),
     bru_verbose = how_verbose
   )
@@ -286,12 +286,12 @@ for (i in 1:nsims){
   fit <- model_two_observers_hr(
     observed_points,
     ips = ips_with_detection_states,
-    bru_verbose = how_verbose,
+    bru_verbose = 1,
     mtrn_prior = matern_prior,
-    prior_on_gamma = bm_marginal(qunif, punif, dunif, min=0.0001, max = 10),
+    prior_on_gamma = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
     bru_initial_params = list(
-      gammaA = qnorm(punif(2, min=0.0001, max = 10)),
-      gammaB = qnorm(punif(2, min=0.0001, max = 10))
+      gammaA = qnorm(pgamma(2, shape=2, rate=1)),
+      gammaB = qnorm(pgamma(2, shape=2, rate=1))
     )
   )
   end <- proc.time()
@@ -347,6 +347,6 @@ ds_ll <-g + geom_boxplot(aes(y=DS_loglambda)) + labs(title="integrated DS on log
 msep <- g + geom_boxplot(aes(y=loglambda_SE)) + labs(title="integrated SE on mean log lambda")
 maep <- g + geom_boxplot(aes(y=lambda_AE)) + labs(title = "integrated AE on median lambda")
 maedetectp <- g + geom_boxplot(aes(y=detect_AE)) + labs(title="mean AE on detection prob")
-ds_avg_p <- g + geom_boxplot(aes(y=detect_AE)) + labs(title="DS on average detection prob")
+ds_avg_p <- g + geom_boxplot(aes(y=DS_avg_p)) + labs(title="DS on average detection prob")
 
 (ds_ll + msep) / ( maep + ds_avg_p)
