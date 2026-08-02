@@ -29,6 +29,7 @@ sim_info <- simulate_lcgp_dual_obs_HR_thinning(
   true_rho = true_range, true_sigma_GRF=true_sigma_grf
 )
 
+
 #the sampled points are in observed_points
 observed_points <- sim_info$samples_df
 
@@ -65,11 +66,11 @@ detect_matern <- inla.spde2.pcmatern(
 )
 
 dists <- seq(0,8, length.out=500)
-
-
 # for model scoring later
-true_detect_prob = detect_func_2observer_hn(dists, true_sigmaA, true_sigmaB)
+true_detect_prob = detect_func_2_observer_hr(dists, true_sigmaA, true_sigmaB, true_gammaA, true_gammaB)
 true_loglambda_at_ip <- c( fm_evaluate(mexdolphin_sf$mesh, field = sim_info$log_lambda, loc = ips$geometry) )
+
+
 list_of_models <- list()
 how_verbose = 1
 
@@ -286,7 +287,7 @@ for (i in 1:nsims){
   fit <- model_two_observers_hr(
     observed_points,
     ips = ips_with_detection_states,
-    bru_verbose = 1,
+    bru_verbose = how_verbose,
     mtrn_prior = matern_prior,
     prior_on_gamma = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
     bru_initial_params = list(
@@ -350,3 +351,8 @@ maedetectp <- g + geom_boxplot(aes(y=detect_AE)) + labs(title="mean AE on detect
 ds_avg_p <- g + geom_boxplot(aes(y=DS_avg_prob)) + labs(title="DS on average detection prob")
 
 (ds_ll + msep) / ( maep + ds_avg_p)
+
+ds_ll
+msep + coord_cartesian(ylim=c(NA, 1e06))
+maep
+ds_avg_p
