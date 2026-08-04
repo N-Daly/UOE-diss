@@ -15,7 +15,7 @@ setwd(my_dir)
 source("simulate 2D ground truth.R")
 source("observer models.R")
 source("function Definitions.R")
-source("mesh resolution from dist discrepancies.R")
+source("mesh construction methods.R")
 
 # this is the one used for the model's spatial effects
 mesh <- make_spatially_varying_mesh3(60, coarse=60)
