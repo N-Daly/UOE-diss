@@ -122,10 +122,10 @@ dawid_sebastiani_score <- function(post_pred, true_value){
 
 get_scoring_differences <- function(
     models,
-    ips,
     true_detect,
     true_loglambda,
-    true_avg_prob_detect = mean(true_detect)
+    true_avg_prob_detect = mean(true_detect),
+    ips_for_pred = fm_int(mexdolphin_sf$mesh)
 ){
   base_mod <- models[[1]] # should always be the one observer hn
   
@@ -154,9 +154,9 @@ get_scoring_differences <- function(
     # now take the difference in scores between this and the base
     # and integrate it over the domain
     mod_diff <- list(
-      DS_loglambda = sum(ips$weight * (mod$DS_loglambda - base_mod$DS_loglambda)),
-      loglambda_SE = sum(ips$weight * (mod$loglambda_SE - base_mod$loglambda_SE)),
-      lambda_AE = sum(ips$weight * (mod$lambda_AE - base_mod$lambda_AE)),
+      DS_loglambda = sum(ips_for_pred$weight * (mod$DS_loglambda - base_mod$DS_loglambda)),
+      loglambda_SE = sum(ips_for_pred$weight * (mod$loglambda_SE - base_mod$loglambda_SE)),
+      lambda_AE = sum(ips_for_pred$weight * (mod$lambda_AE - base_mod$lambda_AE)),
       detect_AE = mean(mod$detect_AE - base_mod$detect_AE),
       DS_avg_prob = mod$DS_avg_prob - base_mod$DS_avg_prob
     )
@@ -172,6 +172,8 @@ get_scoring_differences <- function(
   j <- which(colnames(res)=="model")
   res[,j] <- as.character(res[,j])
   res[,-j] <- apply(res[,-j], 2, as.numeric)
+  
+  rownames(res) <- NULL
 
   res
 }

@@ -42,7 +42,7 @@ model_one_observer_hn <- function(
 
 get_preds_from_one_observer_hn_fit <- function(
     fit,
-    ips,
+    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh)),
     desired = c("detect", "lambda", "avg_prob"),
     dists = seq(0,8, length.out=500),
     m = 1000 # MC samples
@@ -55,7 +55,7 @@ get_preds_from_one_observer_hn_fit <- function(
     
     lst <- predict(
       fit,
-      data.frame(geometry = ips$geometry),
+      data.frame(geometry = ips_for_pred$geometry),
       formula = ~ list(
           pred_lambda = exp(Intercept + spde),
           pred_loglambda = Intercept + spde
@@ -125,7 +125,7 @@ model_one_observer_spline <- function(
 
 get_preds_from_one_observer_spline_fit <- function(
     fit,
-    ips,
+    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh)),
     desired = c("detect", "lambda", "avg_prob"),
     dists = seq(0,8, length.out=500),
     m = 1000 # MC samples
@@ -139,7 +139,7 @@ get_preds_from_one_observer_spline_fit <- function(
     
     lst <- predict(
       fit,
-      data.frame(geometry = ips$geometry),
+      data.frame(geometry = ips_for_pred$geometry),
       formula = ~ list(
         pred_lambda = exp(Intercept  + spde),
         pred_loglambda = Intercept  + spde
@@ -231,7 +231,7 @@ model_two_observers_hn <- function(
 
 get_preds_from_two_observers_hn_fit <- function(
     fit,
-    ips,
+    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh)),
     desired = c("detect", "lambda", "avg_prob"),
     dists = seq(0,8, length.out=500),
     m = 1000 # MC samples
@@ -244,7 +244,7 @@ get_preds_from_two_observers_hn_fit <- function(
     
     lst <- predict(
       fit,
-      data.frame(geometry = ips$geometry),
+      data.frame(geometry = ips_for_pred$geometry),
       formula = ~ list(
         pred_lambda = exp(Intercept + spde),
         pred_loglambda = Intercept + spde
@@ -360,7 +360,7 @@ model_one_observer_hr <- function(
 
 get_preds_from_one_observer_hr_fit <- function(
     fit,
-    ips,
+    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh)),
     fixed_gamma_val = NULL, # if NULL, gamma is assumed to be a r.v
     desired = c("detect", "lambda", "avg_prob"),
     dists = seq(0,8, length.out=500),
@@ -381,7 +381,7 @@ get_preds_from_one_observer_hr_fit <- function(
     
     lst <- predict(
       fit,
-      data.frame(geometry = ips$geometry),
+      data.frame(geometry = ips_for_pred$geometry),
       formula = ~ list(
         pred_lambda = exp(Intercept + spde),
         pred_loglambda = Intercept + spde
@@ -527,7 +527,7 @@ model_two_observers_hr <- function(
 
 get_preds_from_two_observers_hr_fit <- function(
     fit,
-    ips,
+    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh)),
     fixed_gamma_val = NULL, # if NULL, gamma is assumed to be a r.v
     desired = c("detect", "lambda", "avg_prob"),
     dists = seq(0,8, length.out=500),
@@ -541,7 +541,7 @@ get_preds_from_two_observers_hr_fit <- function(
     
     lst <- predict(
       fit,
-      data.frame(geometry = ips$geometry),
+      data.frame(geometry = ips_for_pred$geometry),
       formula = ~ list(
         pred_lambda = exp(Intercept + spde),
         pred_loglambda = Intercept + spde

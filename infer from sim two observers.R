@@ -68,7 +68,11 @@ detect_matern <- inla.spde2.pcmatern(
 dists <- seq(0,8, length.out=500)
 # for model scoring later
 true_detect_prob = detect_func_2_observer_hr(dists, true_sigmaA, true_sigmaB, true_gammaA, true_gammaB)
-true_loglambda_at_ip <- c( fm_evaluate(mexdolphin_sf$mesh, field = sim_info$log_lambda, loc = ips$geometry) )
+true_loglambda_at_ip <- c( fm_evaluate(
+  mexdolphin_sf$mesh, 
+  field = sim_info$log_lambda, 
+  loc = fm_int(mexdolphin_sf$mesh)$geometry
+) )
 
 
 list_of_models <- list()
@@ -85,14 +89,14 @@ how_verbose = 1
 # )
 # end <- proc.time()
 # print((end-start)[3])
-
+# 
 # start <- proc.time()
-# list_of_models$one_obs_hn <- get_preds_from_one_observer_hn_fit(fit, ips)
+# list_of_models$one_obs_hn <- get_preds_from_one_observer_hn_fit(fit)
 # list_of_models$one_obs_hn$name <- "one_obs_hn"
 # end <- proc.time()
 # print((end-start)[3])
-
-
+# 
+# 
 # rm(fit); invisible(gc())
 # # # Model what A and B saw as a two observer likelihood with hn detection functions
 # catt("fitting two HN ")
@@ -102,15 +106,15 @@ how_verbose = 1
 # )
 # end <- proc.time()
 # print((end-start)[3])
-
+# 
 # start <- proc.time()
-# list_of_models$two_obs_hn <- get_preds_from_two_observers_hn_fit(fit, ips)
+# list_of_models$two_obs_hn <- get_preds_from_two_observers_hn_fit(fit)
 # list_of_models$two_obs_hn$name <- "two_obs_hn"
 # end <- proc.time()
 # print((end-start)[3])
-
-
-# Model what A and B saw as a combined observer with a  hazard-rate detection function
+# 
+# 
+# # Model what A and B saw as a combined observer with a  hazard-rate detection function
 # catt("fitting merged HR")
 # start <- proc.time()
 # fit <- model_one_observer_hr(
@@ -124,18 +128,16 @@ how_verbose = 1
 # )
 # end <- proc.time()
 # print((end-start)[3])
-
+# 
 # start <- proc.time()
-# list_of_models$one_obs_HR <- get_preds_from_one_observer_hr_fit(
-#   fit, ips
-# )
+# list_of_models$one_obs_HR <- get_preds_from_one_observer_hr_fit(fit)
 # list_of_models$one_obs_HR$name <- "one_obs_HR"
 # end <- proc.time()
 # print((end-start)[3])
 # 
 # 
 # rm(fit); invisible(gc())
-
+# 
 # 
 # # Model what A and B saw as a two observer likelihood with hazard-rate detection functions
 # # A unif(.0001, 10) prior on gammaA/B
@@ -154,15 +156,14 @@ how_verbose = 1
 # )
 # end <- proc.time()
 # print((end-start)[3])
-
+# 
 # start <- proc.time()
-# list_of_models$two_obs_HR <- get_preds_from_two_observers_hn_fit(fit, ips)
+# list_of_models$two_obs_HR <- get_preds_from_two_observers_hn_fit(fit)
 # list_of_models$two_obs_HR$name <- "two_obs_HR"
 # end <- proc.time()
 # print((end-start)[3])
-
-
-
+# 
+# 
 # rm(fit); invisible(gc())
 # # Model what A and B saw as a combined observer with a spline(like) detection function
 # catt("fitting spline")
@@ -172,28 +173,26 @@ how_verbose = 1
 # )
 # end <- proc.time()
 # print((end-start)[3])
-
+# 
 # start <- proc.time()
-# list_of_models$one_obs_spline <- get_preds_from_one_observer_spline_fit(fit, ips)
+# list_of_models$one_obs_spline <- get_preds_from_one_observer_spline_fit(fit)
 # list_of_models$one_obs_spline$name <- "one_obs_spline"
 # end <- proc.time()
 # print((end-start)[3])
-
+# 
 # rm(fit); invisible(gc())
 # 
 # initial_results <- get_scoring_differences(
 #   list_of_models,
-#   ips,
 #   true_detect_prob,
 #   true_loglambda_at_ip
 # )
 # initial_results
 
 
-
 ############## Repeated simulations
 set.seed(1234)
-nsims <- 30
+nsims <- 20
 results <- NULL
 how_verbose = 0
 
@@ -230,7 +229,7 @@ for (i in 1:nsims){
   print((end-start)[3])
 
   start <- proc.time()
-  list_of_models$one_obs_hn <- get_preds_from_one_observer_hn_fit(fit, ips)
+  list_of_models$one_obs_hn <- get_preds_from_one_observer_hn_fit(fit)
   list_of_models$one_obs_hn$name <- "one_obs_hn"
   end <- proc.time()
   print((end-start)[3])
@@ -247,7 +246,7 @@ for (i in 1:nsims){
   print((end-start)[3])
 
   start <- proc.time()
-  list_of_models$two_obs_hn <- get_preds_from_two_observers_hn_fit(fit, ips)
+  list_of_models$two_obs_hn <- get_preds_from_two_observers_hn_fit(fit)
   list_of_models$two_obs_hn$name <- "two_obs_hn"
   end <- proc.time()
   print((end-start)[3])
@@ -269,9 +268,7 @@ for (i in 1:nsims){
   print((end-start)[3])
 
   start <- proc.time()
-  list_of_models$one_obs_HR <- get_preds_from_one_observer_hr_fit(
-    fit, ips
-  )
+  list_of_models$one_obs_HR <- get_preds_from_one_observer_hr_fit(fit)
   list_of_models$one_obs_HR$name <- "one_obs_HR"
   end <- proc.time()
   print((end-start)[3])
@@ -299,7 +296,7 @@ for (i in 1:nsims){
   print((end-start)[3])
 
   start <- proc.time()
-  list_of_models$two_obs_HR <- get_preds_from_two_observers_hn_fit(fit, ips)
+  list_of_models$two_obs_HR <- get_preds_from_two_observers_hn_fit(fit)
   list_of_models$two_obs_HR$name <- "two_obs_HR"
   end <- proc.time()
   print((end-start)[3])
@@ -317,7 +314,7 @@ for (i in 1:nsims){
   print((end-start)[3])
 
   start <- proc.time()
-  list_of_models$one_obs_spline <- get_preds_from_one_observer_spline_fit(fit, ips)
+  list_of_models$one_obs_spline <- get_preds_from_one_observer_spline_fit(fit)
   list_of_models$one_obs_spline$name <- "one_obs_spline"
   end <- proc.time()
   print((end-start)[3])
@@ -325,7 +322,7 @@ for (i in 1:nsims){
   rm(fit); invisible(gc())
 
   some_results <- get_scoring_differences(
-    list_of_models, ips, true_detect_prob, true_loglambda_at_ip
+    list_of_models, true_detect_prob, true_loglambda_at_ip
   )
 
   results <- bind_rows(results, some_results)
