@@ -15,32 +15,11 @@ source("observer models.R")
 source("function Definitions.R")
 source("observer models.R")
 
-### get some data
-
-
-set.seed(123)
-sim_info <- simulate_lcgp(
-  true_beta0 = -5,
-  true_rho = 500, true_sigma_GRF=1
-)
-
-pts <- sim_info$samples_df
-actual_distance <- pts$distance
-
-
-set.seed(123)
-sim_info <- simulate_lcgp_distance_thinning(
-  detect_func = hn,
-  detect_func_paramA = 1,
-  detect_func_paramB = 4,
-  true_beta0 = -5,
-  true_rho = 500, true_sigma_GRF=1
-)
 
 get_nonoverlapping_samplers <- function(ltransects=mexdolphin_sf$samplers){
 
   nonoverlapping <- c(1)
-  b_trans <- st_buffer(ltransects, dist = 2, endCapStyle = "ROUND")
+  b_trans <- st_buffer(ltransects, dist = 8, endCapStyle = "ROUND")
   
   for (i in 2:nrow(ltransects)){
     l <- b_trans[i,]
@@ -142,17 +121,17 @@ make_spatially_varying_mesh <- function(num_vertices){
 
   # this determines the target max edge length from each initially seeded vertex
   qual_loc <- function(locs){
-    dist <- dist_to_nearest_line_transect(locs, sim_info$line_transects)
+    dist <- dist_to_nearest_line_transect(locs, mexdolphin_sf$samplers)
     #round the distance so that there are less unique edge lengths initially
     pmin(20, pmax(0.5, floor(dist) ))
   }
 
   # a grid of points across the study region, 40km apart
-  seed_points <- fm_hexagon_lattice(st_buffer(sim_info$boundary, 100), edge_len = 40)
+  seed_points <- fm_hexagon_lattice(st_buffer(mexdolphin_sf$ppoly, 100), edge_len = 40)
 
   # also include points on the line transects themselves
   # so that in the following delauney triangulation the transects will be better captured
-  pts_near_line <- st_cast(sim_info$line_transects$geometry, "POINT")
+  pts_near_line <- st_cast(mexdolphin_sf$samplers$geometry, "POINT")
   seed_points <- c(seed_points, pts_near_line)
 
 
@@ -170,25 +149,32 @@ make_spatially_varying_mesh <- function(num_vertices){
     quality.spec = list(
       loc = qual_loc(seed_points)
     ),
-    crs=sim_info$the_mesh$crs
+    crs=fm_crs(mexdolphin_sf$mesh)
   )
   mesh
 }
 
-make_spatially_varying_mesh2 <- function(param){
+make_spatially_varying_mesh2 <- function(param, nonoverlapping_line_transects=nonoverlapping){
 
-  nonoverlapping <- get_nonoverlapping_samplers()
   
   hex_points <- fm_hexagon_lattice(mexdolphin_sf$ppoly, edge_len = 20)
-  transect_points <- st_cast(nonoverlapping$geometry, "POINT")
-  seed_points <- c(transect_points, hex_points)
+  # transect_points <- st_cast(nonoverlapping$geometry, "POINT")
+  seed_points <- hex_points # c(transect_points, hex_points)
+  
+  extension_amount = 130 # seems to work well in practice
+  
+  ext <- fm_extensions(
+    mexdolphin_sf$ppoly,
+    convex = extension_amount,
+    crs = fm_crs(mexdolphin_sf$mesh)
+  )
   
   mesh1 <- fm_rcdt_2d(
     loc = seed_points,
-    boundary = fm_nonconvex_hull(seed_points, convex=100),
+    boundary = ext[[1]],
     refine=F,
     # extend = list(offset = -0.2),
-    crs = mexdolphin_sf$mesh$crs
+    crs = fm_crs(mexdolphin_sf$mesh)
   )
 
   ## Save the resulting boundary
@@ -198,12 +184,12 @@ make_spatially_varying_mesh2 <- function(param){
   ## Triangulate inner domain
   mesh2 <- fm_rcdt_2d(
     loc = seed_points,
-    interior = fm_segm( interior1, nonoverlapping$geometry, is.bnd=F),
+    interior = fm_segm( interior1, nonoverlapping_line_transects$geometry, is.bnd=F),
     boundary = boundary1,
     refine = list(
       min.angle = 27
     ),
-    crs = mesh1$crs
+    crs = fm_crs(mesh1)
   )
   
 
@@ -216,7 +202,7 @@ make_spatially_varying_mesh2 <- function(param){
     refine = list(
       min.angle = 27
     ),
-    crs = mesh1$crs
+    crs = fm_crs(mesh1)
   )
   
   if (param == 0){
@@ -226,8 +212,7 @@ make_spatially_varying_mesh2 <- function(param){
   }
 }
 
-
-make_spatially_varying_mesh3 <- function(hex_length, subdivisions=0){
+make_spatially_varying_mesh3 <- function(hex_length, subdivisions=0, coarse_edge_len = 2*3*5){
   
   # buffer the transects a bit farther than the halfwidth
   bt <- st_buffer(mexdolphin_sf$samplers, 8*1.25)
@@ -236,27 +221,25 @@ make_spatially_varying_mesh3 <- function(hex_length, subdivisions=0){
   hex_points <- fm_hexagon_lattice(bt, edge_len = hex_length)
   
   # make a coarse lattice over the whole region to attempt to keep regularity
-  extra_hex_points <- fm_hexagon_lattice(mexdolphin_sf$ppoly, edge_len = 2*3*5)
+  extra_hex_points <- fm_hexagon_lattice(mexdolphin_sf$ppoly, edge_len = coarse_edge_len)
   
   # combine the two as seed points
   seed_points <- c(hex_points, extra_hex_points)
   
-  bbox <- st_bbox(seed_points)
-  
-  extension_amount <- min( bbox$ymax-bbox$ymin, bbox$xmax-bbox$xmin  )/5
-  
+  extension_amount = 60 # seems to work well in practice
+
   ext <- fm_extensions(
-    seed_points,
+    mexdolphin_sf$ppoly,
     convex = extension_amount,
-    crs = st_crs(mexdolphin_sf$mesh)
+    crs = st_crs(mexdolphin_sf$ppoly)
   )
   
   # make a relatively simple mesh from the lattices' points
   mm <- fm_mesh_2d(
     loc=seed_points,
-    exterior = ext[[1]],
+    loc.domain = ext[[1]],
     min.angle = 27,
-    crs = st_crs(mexdolphin_sf$mesh)
+    crs = fm_crs(mexdolphin_sf$mesh)
   )
   
   
@@ -350,58 +333,64 @@ test_param_tradeoff <- function(
 
 }
 
-different_setups <- list(
-  list(func=make_spatially_varying_mesh3, params=5:1, subtitle = "lattice edge lengths within transect segments"),
-  list(func=make_spatially_varying_mesh2, params=0:4, subtitle = "further mesh subdivisions"),
-  list(func=make_spatially_varying_mesh, params=1:10*10, subtitle = "number of vertices in each mesh, in 1000s")
-)
 
-for (setup in different_setups){
-  results <- test_param_tradeoff(
-    setup$func,
-    setup$params,
-    setup$subtitle,
-    verbose = F
+run_now <- F
+
+if (run_now){
+  
+  ### get some data
+  set.seed(123)
+  sim_info <- simulate_lcgp(
+    true_beta0 = -5,
+    true_rho = 500, true_sigma_GRF=1
   )
+  
+  pts <- sim_info$samples_df
+  actual_distance <- pts$distance
+  
+  set.seed(123)
+  sim_info <- simulate_lcgp_distance_thinning(
+    detect_func = hn,
+    detect_func_paramA = 1,
+    detect_func_paramB = 4,
+    true_beta0 = -5,
+    true_rho = 500, true_sigma_GRF=1
+  )
+  
+  
+  nonoverlapping <- get_nonoverlapping_samplers()
+  
+  different_setups <- list(
+    list(func=make_spatially_varying_mesh3, params=5:1, subtitle = "lattice edge lengths within transect segments"),
+    list(func=make_spatially_varying_mesh2, params=0:4, subtitle = "further mesh subdivisions"),
+    list(func=make_spatially_varying_mesh, params=1:10*10, subtitle = "number of vertices in each mesh, in 1000s")
+  )
+  
+  
+  for (setup in different_setups){
+    results <- test_param_tradeoff(
+      setup$func,
+      setup$params,
+      setup$subtitle,
+      verbose = F
+    )
+  }
+
 }
 
-# m <- make_spatially_varying_mesh3(2)
-# saveRDS(m, "mesh make_spatially_varying_mesh3 hex edge length 2-30.rda")
-# ips <- fm_int(
-#   list(geometry=m),
-#   samplers = sim_info$buffered_transects
-# )
-# ips$distance = dist_to_nearest_line_transect(ips$geometry)
-# saveRDS(ips, "ips make_spatially_varying_mesh3 hex edge length 2-30.rda")
-# rm(ips); gc()
-# 
-# ips <- fm_int(
-#   list(geometry=m, detected=1:3),
-#   samplers = sim_info$buffered_transects
-# )
-# ips$distance = dist_to_nearest_line_transect(ips$geometry)
-# saveRDS(ips, "ips_with_detect make_spatially_varying_mesh3 hex edge length 2-30.rda")
-
-# sanity check all meshes cover the nominal study area
-
-coarse_hex <- fm_hexagon_lattice(mexdolphin_sf$ppoly, edge_len = 30)
-coarse_mesh <- fm_mesh_2d(coarse_hex, crs= fm_crs(mexdolphin_sf$mesh))
+# # sanity check all meshes cover the nominal study area
+# mesh <- make_spatially_varying_mesh3(60, coarse=60)
 # 
 # mm <- make_spatially_varying_mesh(10)
-# ggplot() + gg(mm) + gg(coarse_mesh, edge.color = "red")
-#
-# mm <- make_spatially_varying_mesh2(0)
-# ggplot() + gg(mm) + gg(coarse_mesh, edge.color = "red")
-#
-mm <- make_spatially_varying_mesh3(5)
-ggplot() + gg(mm) + gg(coarse_mesh)
+# ggplot() + gg(mm) + gg(mesh, edge.color = "red")
+# 
+# mm <- make_spatially_varying_mesh2(0, get_nonoverlapping_samplers())
+# ggplot() + gg(mm) + gg(mesh, edge.color = "red")
+# 
+# ggplot() + gg(mm) + gg(st_buffer(mexdolphin_sf$samplers, 8), alpha=.1)
+# 
+# mm <- make_spatially_varying_mesh3(5)
+# ggplot() + gg(mm) + gg(mesh, edge.color = "red")
 
 
-
-ggplot() + gg(mm) + 
-  ggtitle("A mesh composed of fine and coarse hexagonal lattices") + 
-  theme(
-    plot.title=element_text(size=rel(2),face="bold")
-  )
-ggsave("meshConstructionMethod3.pdf", height = 15 ,width = 20)
 
