@@ -247,7 +247,8 @@ make_spatially_varying_mesh3 <- function(hex_length, subdivisions=0){
   
   ext <- fm_extensions(
     seed_points,
-    convex = extension_amount
+    convex = extension_amount,
+    crs = st_crs(mexdolphin_sf$mesh)
   )
   
   # make a relatively simple mesh from the lattices' points
@@ -255,7 +256,7 @@ make_spatially_varying_mesh3 <- function(hex_length, subdivisions=0){
     loc=seed_points,
     exterior = ext[[1]],
     min.angle = 27,
-    crs = st_crs(mexdolphin_sf$samplers)
+    crs = st_crs(mexdolphin_sf$mesh)
   )
   
   
@@ -267,7 +268,10 @@ make_spatially_varying_mesh3 <- function(hex_length, subdivisions=0){
   }
 }
 
-test_param_tradeoff <- function(mesh_maker, params, subtitle, verbose=T){
+test_param_tradeoff <- function(
+    mesh_maker, params, subtitle, verbose=T,
+    file_name= paste("trade off plot", format(Sys.time(), "%d-%m-%Y %H-%M"), ".pdf")
+  ){
 
   fit_time <- NULL
   error <- NULL
@@ -314,13 +318,16 @@ test_param_tradeoff <- function(mesh_maker, params, subtitle, verbose=T){
     error <- c(error, mpe)
     
   }
-
+  
+  # save the plot
+  pdf(file_name)
+  
   # i dont see a way of doing this in ggplot, nor do i see a potential benefit
   plot(
     error, 
     fit_time,
     ylim = range(0, fit_time),
-    xlim = range(0, error),
+    xlim = range(0:1, error),
     type = "c", # lines near but not connecting each point
     xlab = "MAPE as %",
     ylab = "fitting time in seconds",
@@ -336,6 +343,9 @@ test_param_tradeoff <- function(mesh_maker, params, subtitle, verbose=T){
   subtitle <- paste("Number indicates", subtitle)
   mtext(subtitle)
   
+  # save the plot
+  dev.off()
+  
   data.frame(fit_time=fit_time, error=error, param=param)
 
 }
@@ -343,7 +353,7 @@ test_param_tradeoff <- function(mesh_maker, params, subtitle, verbose=T){
 different_setups <- list(
   list(func=make_spatially_varying_mesh3, params=5:1, subtitle = "lattice edge lengths within transect segments"),
   list(func=make_spatially_varying_mesh2, params=0:4, subtitle = "further mesh subdivisions"),
-  list(func=make_spatially_varying_mesh, params=1:15*10, subtitle = "number of vertices in each mesh, in 1000s")
+  list(func=make_spatially_varying_mesh, params=1:10*10, subtitle = "number of vertices in each mesh, in 1000s")
 )
 
 for (setup in different_setups){
@@ -374,14 +384,24 @@ for (setup in different_setups){
 
 # sanity check all meshes cover the nominal study area
 
-# coarse_hex <- fm_hexagon_lattice(mexdolphin_sf$ppoly, edge_len = 30)
-# coarse_mesh <- fm_mesh_2d(coarse_hex, crs= fm_crs(mexdolphin_sf$mesh))
-
+coarse_hex <- fm_hexagon_lattice(mexdolphin_sf$ppoly, edge_len = 30)
+coarse_mesh <- fm_mesh_2d(coarse_hex, crs= fm_crs(mexdolphin_sf$mesh))
+# 
 # mm <- make_spatially_varying_mesh(10)
 # ggplot() + gg(mm) + gg(coarse_mesh, edge.color = "red")
-# 
+#
 # mm <- make_spatially_varying_mesh2(0)
 # ggplot() + gg(mm) + gg(coarse_mesh, edge.color = "red")
-#  
-# mm <- make_spatially_varying_mesh3(5)
-# ggplot() + gg(mm) + gg(coarse_mesh, edge.color = "red")
+#
+mm <- make_spatially_varying_mesh3(5)
+ggplot() + gg(mm) + gg(coarse_mesh)
+
+
+
+ggplot() + gg(mm) + 
+  ggtitle("A mesh composed of fine and coarse hexagonal lattices") + 
+  theme(
+    plot.title=element_text(size=rel(2),face="bold")
+  )
+ggsave("meshConstructionMethod3.pdf", height = 15 ,width = 20)
+
