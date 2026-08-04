@@ -15,18 +15,18 @@ setwd(my_dir)
 source("simulate 2D ground truth.R")
 source("observer models.R")
 source("function Definitions.R")
-scale <- ggspatial::annotation_scale
+source("mesh resolution from dist discrepancies.R")
 
 # this is the one used for the model's spatial effects
-mesh <- readRDS("mesh hex lat edge 60.rda")
+mesh <- make_spatially_varying_mesh3(60, coarse=60)
 
 tran_segm <- st_buffer(mexdolphin_sf$samplers, 8, endCapStyle = "FLAT")
 
 ggplot() +
   gg(mesh, edge.color = "black") + 
-  gg(tran_segm, alpha = 1, colour = "blue") + 
+  gg(tran_segm, alpha = .1, colour = "blue") + 
   gg(mexdolphin_sf$ppoly, alpha = 0.2,  color="red") +
-  scale(data=mexdolphin_sf$ppoly) +
+  ggspatial::annotation_scale(data=mexdolphin_sf$ppoly) +
   ggtitle("Mesh of the study region") + 
   theme(
     plot.title=element_text(size=rel(2),face="bold"),
@@ -36,7 +36,17 @@ ggplot() +
 ggsave("modelMesh.pdf", height = 10, width = 20)
 
 
+# demonstrate mesh construct method 3 -  the two hexagonal lattices
+mm <- make_spatially_varying_mesh3(5)
 
+ggplot() + gg(mm) + 
+  ggtitle("A mesh composed of fine and coarse hexagonal lattices") + 
+  theme(
+    plot.title=element_text(size=rel(2),face="bold")
+  ) +
+  gg(mexdolphin_sf$ppoly, col = "red", alpha= .2)
+
+ggsave("meshConstructionMethod3.pdf", height = 15 ,width = 20)
 
 
 r <- readRDS("01-08-2026 12-15 amended simulation results.rda")
