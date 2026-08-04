@@ -351,6 +351,6 @@ ds_avg_p <- g + geom_boxplot(aes(y=DS_avg_prob)) + labs(title="DS on average det
 (ds_ll + msep) / ( maep + ds_avg_p)
 
 ds_ll
-msep + coord_cartesian(ylim=c(NA, 1e06))
+msep + coord_cartesian(ylim=c(NA, 1e07))
 maep
 ds_avg_p
