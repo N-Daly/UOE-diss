@@ -71,7 +71,8 @@ true_detect_prob = detect_func_2_observer_hr(dists, true_sigmaA, true_sigmaB, tr
 true_loglambda_at_ip <- c( fm_evaluate(
   mexdolphin_sf$mesh, 
   field = sim_info$log_lambda, 
-  loc = fm_int(mexdolphin_sf$mesh)$geometry
+  # these are the locations the models with predict the intensity by default
+  loc = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly)$geometry
 ) )
 
 

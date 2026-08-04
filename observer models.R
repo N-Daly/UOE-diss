@@ -42,7 +42,7 @@ model_one_observer_hn <- function(
 
 get_preds_from_one_observer_hn_fit <- function(
     fit,
-    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh)),
+    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
     desired = c("detect", "lambda", "avg_prob"),
     dists = seq(0,8, length.out=500),
     m = 1000 # MC samples
@@ -125,7 +125,7 @@ model_one_observer_spline <- function(
 
 get_preds_from_one_observer_spline_fit <- function(
     fit,
-    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh)),
+    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
     desired = c("detect", "lambda", "avg_prob"),
     dists = seq(0,8, length.out=500),
     m = 1000 # MC samples
@@ -231,7 +231,7 @@ model_two_observers_hn <- function(
 
 get_preds_from_two_observers_hn_fit <- function(
     fit,
-    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh)),
+    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
     desired = c("detect", "lambda", "avg_prob"),
     dists = seq(0,8, length.out=500),
     m = 1000 # MC samples
@@ -360,7 +360,7 @@ model_one_observer_hr <- function(
 
 get_preds_from_one_observer_hr_fit <- function(
     fit,
-    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh)),
+    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
     fixed_gamma_val = NULL, # if NULL, gamma is assumed to be a r.v
     desired = c("detect", "lambda", "avg_prob"),
     dists = seq(0,8, length.out=500),
@@ -527,7 +527,7 @@ model_two_observers_hr <- function(
 
 get_preds_from_two_observers_hr_fit <- function(
     fit,
-    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh)),
+    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
     fixed_gamma_val = NULL, # if NULL, gamma is assumed to be a r.v
     desired = c("detect", "lambda", "avg_prob"),
     dists = seq(0,8, length.out=500),

@@ -125,7 +125,7 @@ get_scoring_differences <- function(
     true_detect,
     true_loglambda,
     true_avg_prob_detect = mean(true_detect),
-    ips_for_pred = fm_int(mexdolphin_sf$mesh)
+    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly)
 ){
   base_mod <- models[[1]] # should always be the one observer hn
   
