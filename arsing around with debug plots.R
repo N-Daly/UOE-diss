@@ -55,49 +55,5 @@ sim_info <- simulate_lcgp_dual_obs_HR_thinning(
 #   true_beta0 = -4
 # )
 
-source("function Definitions.R")
 lets_have_a_look_at_you(sim_info, true_detect_prob_df)
-
-# every <- sim_info$unthinned_samples_df
-# hist(
-#   obs$distance[obs$detected==1],
-#   30,
-#   freq=F,
-#   ylim=0:1
-# )
-# 
-# par(mfrow=c(2,1))
-# hist(
-#   obs$distance[obs$detectA],
-#   30,
-#   freq=F,
-#   ylim=0:1
-# )
-# lines(dists, pdf_dist*pA)
-# lines(density(obs$distance[obs$detectA], from = 0, to = 8))
-
-# par(old_par)
-# 
-# d <- density(obs$distance[obs$detectA])
-# max(d$y)
-# plot(
-#   density(obs$distance[obs$detectA], from = 0, to = 8),
-#   ylim = 0:1
-#   
-# )
-# lines(dists, pA*pdf_dist)
-# 
-# hist(obs$distance,30, ylim=0:1, freq=F);abline(h=2/8)
-# 
-# 
-
-
-# plot(
-#   dists, 0*dists,
-#   type = "n",
-#   ylim = 0:1
-# )
-# lines(dists, pdf_dist*pA/pany)
-
-
 

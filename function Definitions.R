@@ -203,7 +203,7 @@ lets_have_a_look_at_you <- function(
   col_states <- c("red", "blue", "purple")
   name_states <- c("Observer A only", "Observer B only", "Observer A and B")
 
-  # plot all points and just observed points
+  ##########  plot all points and just observed points
   animal_plot <- ggplot() +
     geom_sf(data = all_pts$geometry, col = "black") +
     labs(title = paste("True abundance =", nrow(all_pts)) ) 
@@ -224,11 +224,31 @@ lets_have_a_look_at_you <- function(
   # print(animal_plot); print(obs_animal_plot)
   print(animal_plot / obs_animal_plot)
 
-  # plot lambda
+  ########## plot lambda
+  pxls <- fm_pixels(sim_info$the_mesh, mask = sim_info$boundary, dims = c(200, 200))
   
-  # histogram of observed distances, per observer and all animals' distances
+  pxls$loglambda <- fm_evaluate(sim_info$the_mesh, loc= pxls, field=sim_info$log_lambda )
+  pxls$lambda <- exp(pxls$loglambda)
   
-  # hist of all animals distances
+  intensity_plot <- ggplot() +
+    gg(sim_info$boundary, alpha= .1) +
+    geom_tile(
+      data = pxls,
+      aes(geometry = geometry, fill = lambda),
+      stat = "sf_coordinates"  
+    ) +
+    geom_sf(data = sim_info$boundary, alpha = 0.1) +
+    labs(title = "True underlying animal density or intensity") +
+    scale_fill_continuous(name = "Density") + 
+    theme( 
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank()
+    ) 
+  
+  print(intensity_plot)
+  
+  ##########  histogram of observed distances, per observer and all animals' distances
+  
   
   # the detection functions arent pdfs so theyre only proportional to the true
   # prob of detecting each distance - scaling by a constant for line transects
@@ -267,6 +287,9 @@ lets_have_a_look_at_you <- function(
     obs_pts$distance,
     detect_df$any
   )
+  
+  # hist of all animals distances
+  
   # make sure all detection plots are in the same frame
   g <- ggplot() + expand_limits(y= c(0, 1) )
   
@@ -321,6 +344,9 @@ lets_have_a_look_at_you <- function(
   print( 
     (obs_animals_d  + detect_dist_plots[[1]])/ (detect_dist_plots[[2]] + detect_dist_plots[[3]]) 
   )
+  
+  
+  # hist of distances detected marginally by each observer
   
   g <- ggplot(mapping=aes(distance, y = after_stat(density) )) + 
     expand_limits(y= c(0, 1) )
