@@ -173,7 +173,6 @@ dist_to_nearest_line_transect <- function(pts, transects = mexdolphin_sf$sampler
   
 }
 
-
 catt <- function(...){ cat(..., "\n")}# pet peeve
 
 # just plot the prediction of detection probabilites
@@ -191,4 +190,171 @@ plot_detect_pred <- function(pred_df, main = "", true=true_detect_prob, d= dists
   
   lines(d, true, col = "red", lwd =2)
 }
+
+############ examine LGCP simulation realisation
+lets_have_a_look_at_you <- function(
+    sim,
+    detect_df
+){
+  
+  all_pts <- sim$unthinned_samples_df
+  obs_pts <- sim$samples_df
+  
+  col_states <- c("red", "blue", "purple")
+  name_states <- c("Observer A only", "Observer B only", "Observer A and B")
+
+  # plot all points and just observed points
+  animal_plot <- ggplot() +
+    geom_sf(data = all_pts$geometry, col = "black") +
+    labs(title = paste("True abundance =", nrow(all_pts)) ) 
+  
+  obs_animal_plot <- ggplot() + 
+    geom_sf(
+      data = obs_pts,
+      mapping = aes(colour=as.character(obs_pts$detected)) 
+    ) +
+    scale_color_manual(
+      name = "Type of detection",
+      breaks = c("1", "2", "3"),
+      values = col_states,
+      labels = name_states
+    ) +
+    labs(title = paste("Total observed = ", nrow(obs_pts)))
+  
+  # print(animal_plot); print(obs_animal_plot)
+  print(animal_plot / obs_animal_plot)
+
+  # plot lambda
+  
+  # histogram of observed distances, per observer and all animals' distances
+  
+  # hist of all animals distances
+  
+  # the detection functions arent pdfs so theyre only proportional to the true
+  # prob of detecting each distance - scaling by a constant for line transects
+  rescale_to_overlay <- function(obs_dists, prob){
+    
+    # the highest point in the histogram,
+    hist_max <- max(hist(obs_dists,30, plot=F)$density)
+    
+    # will now coincide with the highest point in the pdf curve
+    factor <- hist_max/max(prob)
+    
+    factor*prob
+  }
+  
+  detect_df$Amarginal <- rescale_to_overlay(
+    obs_pts$distance[obs_pts$detectA],
+    detect_df$Amarginal
+  )
+  detect_df$Bmarginal <- rescale_to_overlay(
+    obs_pts$distance[obs_pts$detectB],
+    detect_df$Bmarginal
+  )
+  detect_df$detected1 <- rescale_to_overlay(
+    obs_pts$distance[obs_pts$detected==1],
+    detect_df$detected1
+  )
+  detect_df$detected2 <- rescale_to_overlay(
+    obs_pts$distance[obs_pts$detected==2],
+    detect_df$detected2
+  )
+  detect_df$detected3 <- rescale_to_overlay(
+    obs_pts$distance[obs_pts$detected==3],
+    detect_df$detected3
+  )
+  detect_df$any <- rescale_to_overlay(
+    obs_pts$distance,
+    detect_df$any
+  )
+  # make sure all detection plots are in the same frame
+  g <- ggplot() + expand_limits(y= c(0, 1) )
+  
+  all_animals_d <- g + 
+    geom_histogram(
+      data = all_pts, 
+      mapping=aes(distance, y = after_stat(density) ),
+      bins=30
+    ) 
+  
+  obs_animals_d <- g + 
+    geom_histogram(
+      data = obs_pts, 
+      mapping=aes(distance, y = after_stat(density) ),
+      bins=30
+    ) +
+    geom_line(
+      data = detect_df,
+      aes(distance, any),
+      linewidth = 2,
+      col = "green" # idk what colour is the union of blue and red
+    ) +
+    labs(
+      title = "Observed distances by either observer",
+      subtitle = "Theoretical probability of detection overlain"
+    )
+  
+  # hist of those in each detection state and theoretical prob overlaid
+  detect_dist_plots <- sapply(
+    1:3,
+    function(detect_state){
+      g + 
+        geom_histogram(
+          data = obs_pts[obs_pts$detected == detect_state,],
+          mapping=aes(distance, y = after_stat(density) ),
+          bins = 30
+        )+
+        geom_line(
+          data = detect_df,
+          # see https://ggplot2.tidyverse.org/reference/aes_.html
+          aes(distance, .data[[paste0("detected", detect_state)]]),
+          linewidth = 2,
+          col = col_states[detect_state]
+        ) +
+        labs(
+          title = paste("Observed distances of", name_states[detect_state]),
+          subtitle = "Theoretical probability of detection overlain"
+        )
+    }
+  )
+  
+  print( 
+    (obs_animals_d  + detect_dist_plots[[1]])/ (detect_dist_plots[[2]] + detect_dist_plots[[3]]) 
+  )
+  
+  g <- ggplot(mapping=aes(distance, y = after_stat(density) )) + 
+    expand_limits(y= c(0, 1) )
+  
+  detect_A_plot <- g + 
+    geom_histogram(
+      data = obs_pts[obs_pts$detectA,],
+      bins = 30,
+      closed = "left"
+    ) +
+    geom_line(
+      data = detect_df,
+      aes(distance, Amarginal),
+      linewidth = 2,
+      col = "red"
+    ) + 
+    labs(title= "Observed distances by Observer A marginally")
+  
+  detect_B_plot <- g + 
+    geom_histogram(
+      data = obs_pts[obs_pts$detectB,],
+      bins = 30,
+      closed = "left"
+    ) +
+    geom_line(
+      data = detect_df,
+      aes(distance, Bmarginal),
+      linewidth = 2,
+      col = "blue"
+    ) + 
+    labs(title= "Observed distances by Observer B marginally")
+  
+  print( detect_A_plot/detect_B_plot)
+}
+
+
 
