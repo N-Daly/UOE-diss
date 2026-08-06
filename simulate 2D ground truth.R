@@ -4,7 +4,6 @@ library(INLA)
 library(inlabru)
 library(sf)
 library(fmesher)
-library(units)
 # detection functions are defined in function Definitions.R
 source("function Definitions.R")
 
@@ -22,7 +21,7 @@ simulate_lcgp <- function(
   # the observable region around the line transects
   polygon_transects <- st_buffer(
     line_transects,
-    set_units(halfwidth_km, "km"),
+    halfwidth_km,
     endCapStyle = "FLAT")
 
   # sample from the grf and get the underlying log intensity
@@ -49,6 +48,7 @@ simulate_lcgp <- function(
   list(
     log_lambda = log_lambda,
     samples_df = samples_df,
+    unthinned_samples_df = samples_df, # to access underlying realisation, in case of later thinning
     true_abundance = nrow(samples_df),
     the_mesh = mesh1,
     line_transects = line_transects,
@@ -128,6 +128,10 @@ simulate_lcgp_dual_obs_HR_thinning <- function(
   # thin the process with probabilities given by the hazard rate detection function
   pA <- hr(samples_df$distance, true_sigmaA, true_gammaA)
   pB <- hr(samples_df$distance, true_sigmaB, true_gammaB)
+  
+  if ( any(!is.finite(pA)) | any(!is.finite(pB)) ){
+    stop()
+  } 
   
   samples_df$detectA <- runif(nrow(samples_df)) <= pA
   samples_df$detectB <- runif(nrow(samples_df)) <= pB
