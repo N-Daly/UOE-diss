@@ -29,8 +29,6 @@ pB <- hr(dists, sigma = true_sigmaB, gamma = true_gammaB)
 # pB <- hn(dists, sigma = true_sigmaB)
 pany <- 1-(1-pA)*(1-pB)
 
-# distribution of observable distances - uniform over line transect segments
-pdf_dist <- 1#/length(dists)
 true_detect_prob_df <- data.frame(
   distance = dists,
   Amarginal = pA,
