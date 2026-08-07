@@ -16,24 +16,28 @@ source("observer models.R")
 source("function Definitions.R")
 source("mesh construction methods.R")
 
-########### simulate the ground truth
+########### state the ground truth
 
 true_sigmaA <- 1.75; true_sigmaB <- 2; true_gammaA <- 1; true_gammaB <- 4
 true_range <- 500; true_sigma_grf <- 1
 
-set.seed(800)
-# simulate a ground truth
-sim_info <- simulate_lcgp_dual_obs_HR_thinning(
-  true_sigmaA, true_sigmaB, true_gammaA, true_gammaB,
-  true_beta0 = -5,
-  true_rho = true_range, true_sigma_GRF=true_sigma_grf
+# work out the different probabilities of detection
+dists <- seq(0,8, length.out=500)
+
+pA <- hr(dists, sigma = true_sigmaA, gamma = true_gammaA)
+pB <- hr(dists, sigma = true_sigmaB, gamma = true_gammaB)
+pany = detect_func_2_observer_hr(dists, true_sigmaA, true_sigmaB, true_gammaA, true_gammaB)
+
+true_detect_prob_df <- data.frame(
+  distance = dists,
+  Amarginal = pA,
+  Bmarginal = pB,
+  "detected1" = pA*(1-pB),
+  "detected2" = (1-pA)*pB,
+  "detected3" = pA*pB,
+  "any" = pany
 )
 
-
-#the sampled points are in observed_points
-observed_points <- sim_info$samples_df
-
-############## modelling
 
 ######## set up before modelling
 mesh <- make_spatially_varying_mesh3(60, coarse=60)
@@ -65,131 +69,23 @@ detect_matern <- inla.spde2.pcmatern(
   )
 )
 
-dists <- seq(0,8, length.out=500)
-# for model scoring later
-true_detect_prob = detect_func_2_observer_hr(dists, true_sigmaA, true_sigmaB, true_gammaA, true_gammaB)
-true_loglambda_at_ip <- c( fm_evaluate(
-  mexdolphin_sf$mesh, 
-  field = sim_info$log_lambda, 
-  # these are the locations the models with predict the intensity by default
+proj_from_DGP_mesh_to_intensity_pred_locs <- fm_evaluator(
+  mesh = mexdolphin_sf$mesh, 
+  # all models predict on the locations of this integration scheme, with which they are scored.
+  # and the scores are integrated using the integration scheme weights
   loc = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly)$geometry
-) )
+)
+# for model scoring later
+true_detect_prob <- pany
 
 
-list_of_models <- list()
+############## Simulation
+
+
+set.seed(800)
 how_verbose = 1
-
-
-######## fitting models
-
-# # Model what A and B saw as a combined observer with a hn detection function
-# catt("fitting merged HN")
-# start <- proc.time()
-# fit <- model_one_observer_hn(
-#   observed_points, matern_prior, ips=ips, bru_verbose=how_verbose
-# )
-# end <- proc.time()
-# print((end-start)[3])
-# 
-# start <- proc.time()
-# list_of_models$one_obs_hn <- get_preds_from_one_observer_hn_fit(fit)
-# list_of_models$one_obs_hn$name <- "one_obs_hn"
-# end <- proc.time()
-# print((end-start)[3])
-# 
-# 
-# rm(fit); invisible(gc())
-# # # Model what A and B saw as a two observer likelihood with hn detection functions
-# catt("fitting two HN ")
-# start <- proc.time()
-# fit <- model_two_observers_hn(
-#   observed_points, matern_prior, ips = ips_with_detection_states, bru_verbose=how_verbose
-# )
-# end <- proc.time()
-# print((end-start)[3])
-# 
-# start <- proc.time()
-# list_of_models$two_obs_hn <- get_preds_from_two_observers_hn_fit(fit)
-# list_of_models$two_obs_hn$name <- "two_obs_hn"
-# end <- proc.time()
-# print((end-start)[3])
-# 
-# 
-# # Model what A and B saw as a combined observer with a  hazard-rate detection function
-# catt("fitting merged HR")
-# start <- proc.time()
-# fit <- model_one_observer_hr(
-#   observed_points, mtrn_prior =  matern_prior, ips=ips,
-#   prior_on_gamma = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
-#   bru_initial_params = list(
-#     sigma = qnorm(pexp(2, rate= 1/8)),
-#     gamma = qnorm(pgamma(2, shape=2, rate=1))
-#   ),
-#   bru_verbose = how_verbose
-# )
-# end <- proc.time()
-# print((end-start)[3])
-# 
-# start <- proc.time()
-# list_of_models$one_obs_HR <- get_preds_from_one_observer_hr_fit(fit)
-# list_of_models$one_obs_HR$name <- "one_obs_HR"
-# end <- proc.time()
-# print((end-start)[3])
-# 
-# 
-# rm(fit); invisible(gc())
-# 
-# 
-# # Model what A and B saw as a two observer likelihood with hazard-rate detection functions
-# # A unif(.0001, 10) prior on gammaA/B
-# catt("fitting two observer HR")
-# start <- proc.time()
-# fit <- model_two_observers_hr(
-#   observed_points,
-#   ips = ips_with_detection_states,
-#   bru_verbose = how_verbose,
-#   mtrn_prior = matern_prior,
-#   prior_on_gamma = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
-#   bru_initial_params = list(
-#     gammaA = qnorm(pgamma(2, shape=2, rate=1)),
-#     gammaB = qnorm(pgamma(2, shape=2, rate=1))
-#   )
-# )
-# end <- proc.time()
-# print((end-start)[3])
-# 
-# start <- proc.time()
-# list_of_models$two_obs_HR <- get_preds_from_two_observers_hn_fit(fit)
-# list_of_models$two_obs_HR$name <- "two_obs_HR"
-# end <- proc.time()
-# print((end-start)[3])
-# 
-# 
-# rm(fit); invisible(gc())
-# # Model what A and B saw as a combined observer with a spline(like) detection function
-# catt("fitting spline")
-# start <- proc.time()
-# fit <- model_one_observer_spline(
-#   observed_points, matern_prior, detect_matern, ips=ips, bru_verbose=how_verbose
-# )
-# end <- proc.time()
-# print((end-start)[3])
-# 
-# start <- proc.time()
-# list_of_models$one_obs_spline <- get_preds_from_one_observer_spline_fit(fit)
-# list_of_models$one_obs_spline$name <- "one_obs_spline"
-# end <- proc.time()
-# print((end-start)[3])
-# 
-# rm(fit); invisible(gc())
-# 
-# initial_results <- get_scoring_differences(
-#   list_of_models,
-#   true_detect_prob,
-#   true_loglambda_at_ip
-# )
-# initial_results
-
+source("one iteration of realisation and fitting.R")
+some_results
 
 ############## Repeated simulations
 set.seed(1234)
@@ -202,129 +98,10 @@ file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "simulation results.rda
 
 for (i in 1:nsims){
   catt("Simulation", i, "of", nsims)
-
-  # need to save space and these model fits are large
-  rm(fit); invisible(gc())
-
-  # simulate a ground truth
-  sim_info <- simulate_lcgp_distance_thinning(
-    detect_func = hn,
-    detect_func_paramA = true_sigmaA,
-    detect_func_paramB = true_sigmaB,
-    true_beta0 = -5,
-    true_rho = true_range, true_sigma_GRF=true_sigma_grf
-  )
-
-  #the sampled points are in observed_points
-  observed_points <- sim_info$samples_df
-  list_of_models = list()
-
-
-  # # Model what A and B saw as a combined observer with a hn detection function
-  catt("fitting merged HN")
-  start <- proc.time()
-  fit <- model_one_observer_hn(
-    observed_points, matern_prior, ips=ips, bru_verbose=how_verbose
-  )
-  end <- proc.time()
-  print((end-start)[3])
-
-  start <- proc.time()
-  list_of_models$one_obs_hn <- get_preds_from_one_observer_hn_fit(fit)
-  list_of_models$one_obs_hn$name <- "one_obs_hn"
-  end <- proc.time()
-  print((end-start)[3])
-
-
-  rm(fit); invisible(gc())
-  # # Model what A and B saw as a two observer likelihood with hn detection functions
-  catt("fitting two HN ")
-  start <- proc.time()
-  fit <- model_two_observers_hn(
-    observed_points, matern_prior, ips = ips_with_detection_states, bru_verbose=how_verbose
-  )
-  end <- proc.time()
-  print((end-start)[3])
-
-  start <- proc.time()
-  list_of_models$two_obs_hn <- get_preds_from_two_observers_hn_fit(fit)
-  list_of_models$two_obs_hn$name <- "two_obs_hn"
-  end <- proc.time()
-  print((end-start)[3])
-
-
-  # Model what A and B saw as a combined observer with a  hazard-rate detection function
-  catt("fitting merged HR")
-  start <- proc.time()
-  fit <- model_one_observer_hr(
-    observed_points, mtrn_prior =  matern_prior, ips=ips,
-    prior_on_gamma = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
-    bru_initial_params = list(
-      sigma = qnorm(pexp(2, rate= 1/8)),
-      gamma = qnorm(pgamma(2, shape=2, rate=1))
-    ),
-    bru_verbose = how_verbose
-  )
-  end <- proc.time()
-  print((end-start)[3])
-
-  start <- proc.time()
-  list_of_models$one_obs_HR <- get_preds_from_one_observer_hr_fit(fit)
-  list_of_models$one_obs_HR$name <- "one_obs_HR"
-  end <- proc.time()
-  print((end-start)[3])
-
-
-  rm(fit); invisible(gc())
-
-
-  # Model what A and B saw as a two observer likelihood with hazard-rate detection functions
-  # A unif(.0001, 10) prior on gammaA/B
-  catt("fitting two observer HR")
-  start <- proc.time()
-  fit <- model_two_observers_hr(
-    observed_points,
-    ips = ips_with_detection_states,
-    bru_verbose = how_verbose,
-    mtrn_prior = matern_prior,
-    prior_on_gamma = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
-    bru_initial_params = list(
-      gammaA = qnorm(pgamma(2, shape=2, rate=1)),
-      gammaB = qnorm(pgamma(2, shape=2, rate=1))
-    )
-  )
-  end <- proc.time()
-  print((end-start)[3])
-
-  start <- proc.time()
-  list_of_models$two_obs_HR <- get_preds_from_two_observers_hn_fit(fit)
-  list_of_models$two_obs_HR$name <- "two_obs_HR"
-  end <- proc.time()
-  print((end-start)[3])
-
-
-
-  rm(fit); invisible(gc())
-  # Model what A and B saw as a combined observer with a spline(like) detection function
-  catt("fitting spline")
-  start <- proc.time()
-  fit <- model_one_observer_spline(
-    observed_points, matern_prior, detect_matern, ips=ips, bru_verbose=how_verbose
-  )
-  end <- proc.time()
-  print((end-start)[3])
-
-  start <- proc.time()
-  list_of_models$one_obs_spline <- get_preds_from_one_observer_spline_fit(fit)
-  list_of_models$one_obs_spline$name <- "one_obs_spline"
-  end <- proc.time()
-  print((end-start)[3])
-
-  rm(fit); invisible(gc())
-
-  some_results <- get_scoring_differences(
-    list_of_models, true_detect_prob, true_loglambda_at_ip
-  )
+  
+  # this script will use fit all the models and store the differenced scores in
+  # a `some_results` df
+  source("one iteration of realisation and fitting.R")
 
   results <- bind_rows(results, some_results)
 
