@@ -108,7 +108,7 @@ model_one_observer_spline <- function(
     spline_spde(main=distance, model=detect_matern) +
     spde(main=geometry, model=matern_prior)
   
-  form <- geometry  ~ Intercept  + spde +
+  form <- geometry  ~ Intercept  + spde + log(2) + 
     ln_spline_detect_func(spline_spde)
   
   
@@ -470,6 +470,7 @@ model_two_observers_hr <- function(
     dd, 
     ips,
     prior_on_gamma,
+    prior_on_sigma,
     bru_initial_params = list(),
     mtrn_prior = matern_prior, # save memory
     half_width = 8,
@@ -478,17 +479,17 @@ model_two_observers_hr <- function(
   matern_prior <- mtrn_prior
   lambda_sigma <- 1/half_width
   
-  bru_initial_params$sigmaA <- qnorm(pexp(2, lambda_sigma))
-  bru_initial_params$sigmaB <- qnorm(pexp(2, lambda_sigma))
+  # bru_initial_params$sigmaA <- qnorm(pexp(2, lambda_sigma))
+  # bru_initial_params$sigmaB <- qnorm(pexp(2, lambda_sigma))
   
   cmp <- ~ Intercept(1) +
     sigmaA(1,
            prec.linear = 1,
-           marginal = bm_marginal(qexp, pexp, dexp, rate = lambda_sigma) 
+           marginal = prior_on_sigma# bm_marginal(qexp, pexp, dexp, rate = lambda_sigma) 
     ) +
     sigmaB(1,
            prec.linear = 1,
-           marginal = bm_marginal(qexp, pexp, dexp, rate = lambda_sigma)
+           marginal = prior_on_sigma # bm_marginal(qexp, pexp, dexp, rate = lambda_sigma)
     )+ 
     gammaA(1,
            prec.linear = 1,
