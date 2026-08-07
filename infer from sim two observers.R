@@ -82,14 +82,14 @@ true_detect_prob <- pany
 ############## Simulation
 
 
-set.seed(800)
-how_verbose = 1
-source("one iteration of realisation and fitting.R")
-some_results
+# set.seed(800)
+# how_verbose = 1
+# source("one iteration of realisation and fitting.R")
+# some_results
 
 ############## Repeated simulations
 set.seed(1234)
-nsims <- 20
+nsims <- 60
 results <- NULL
 how_verbose = 0
 

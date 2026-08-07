@@ -6,7 +6,7 @@ iteration_start <- proc.time()
 sim_info <- simulate_lcgp_dual_obs_HR_thinning(
   true_sigmaA = true_sigmaA, true_sigmaB = true_sigmaB,
   true_gammaA = true_gammaA, true_gammaB = true_gammaB,
-  true_beta0 = -5,
+  true_beta0 = -4,
   true_rho = true_range, true_sigma_GRF = true_sigma_grf
 )
 
