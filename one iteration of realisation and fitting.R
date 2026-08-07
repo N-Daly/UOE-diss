@@ -135,5 +135,5 @@ some_results <- get_scoring_differences(
 
 iteration_end <- proc.time()
 iteration_duration <- (iteration_end-iteration_start)[[3]]
-catt("Iteration took ", iteration_duration, " seconds")
+catt("Iteration took ", pretty_print_seconds(iteration_duration))
 

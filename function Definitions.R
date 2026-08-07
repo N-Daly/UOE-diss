@@ -165,7 +165,7 @@ get_scoring_differences <- function(
   res
 }
 
-######### general utitlities
+######### general utilities
 dist_to_nearest_line_transect <- function(pts, transects = mexdolphin_sf$samplers){
   
   # this should be in kilometres as the crs is in km units
@@ -191,10 +191,36 @@ plot_detect_pred <- function(pred_df, main = "", true=true_detect_prob, d= dists
   lines(d, true, col = "red", lwd =2)
 }
 
+pretty_print_seconds <- function(secs){
+  secs <- round(secs)
+  
+  hrs <-  secs %/% (60*60)
+  secs <- secs %% (60*60)
+  
+  mins <- secs %/% 60
+  secs <- secs %% 60
+  
+  txt <- ""
+  
+  if (hrs > 0){
+    txt <- paste0(txt, hrs, "hrs", " ")
+  }
+  if(mins >0){
+    txt <- paste0(txt, mins, "mins", " ")
+  }
+  if(secs >0){
+    txt <- paste0(txt, secs, "secs", " ")
+  }
+  
+  txt
+}
+
+
 ############ examine LGCP simulation realisation
 lets_have_a_look_at_you <- function(
     sim,
-    detect_df
+    detect_df,
+    approx_intensity_range = c(0, 0.225) # so all plots have the same colour scale
 ){
   
   all_pts <- sim$unthinned_samples_df
@@ -221,8 +247,6 @@ lets_have_a_look_at_you <- function(
     ) +
     labs(title = paste("Total observed = ", nrow(obs_pts)))
   
-  # print(animal_plot); print(obs_animal_plot)
-  print(animal_plot / obs_animal_plot)
 
   ########## plot lambda
   pxls <- fm_pixels(sim_info$the_mesh, mask = sim_info$boundary, dims = c(200, 200))
@@ -239,13 +263,16 @@ lets_have_a_look_at_you <- function(
     ) +
     geom_sf(data = sim_info$boundary, alpha = 0.1) +
     labs(title = "True underlying animal density or intensity") +
-    scale_fill_continuous(name = "Density") + 
+    scale_fill_continuous(
+      name = "Density",
+      limits = approx_intensity_range
+      ) + 
     theme( 
       axis.title.x = element_blank(),
       axis.title.y = element_blank()
     ) 
   
-  print(intensity_plot)
+  print(intensity_plot/ animal_plot / obs_animal_plot)
   
   ##########  histogram of observed distances, per observer and all animals' distances
   
@@ -341,9 +368,8 @@ lets_have_a_look_at_you <- function(
     }
   )
   
-  print( 
-    (obs_animals_d  + detect_dist_plots[[1]])/ (detect_dist_plots[[2]] + detect_dist_plots[[3]]) 
-  )
+  
+  detect_states_plot <- (obs_animals_d  + detect_dist_plots[[1]])/ (detect_dist_plots[[2]] + detect_dist_plots[[3]]) 
   
   
   # hist of distances detected marginally by each observer
@@ -379,7 +405,7 @@ lets_have_a_look_at_you <- function(
     ) + 
     labs(title= "Observed distances by Observer B marginally")
   
-  print( detect_A_plot/detect_B_plot)
+  print(  detect_states_plot | (detect_A_plot/detect_B_plot) )
 }
 
 
