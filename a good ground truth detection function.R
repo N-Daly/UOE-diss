@@ -6,13 +6,13 @@ dd <- seq(0, 8, length.out=1000)
 
 pa <- hr(dd, 1.75, 1)
 pb <- hr(dd, 2, 4)
-pdual <- 1 - (1-pa)*(1-pb)
+pany <- 1 - (1-pa)*(1-pb)
 
 par(cex=1)
 
 plot(
   dd,
-  pdual,
+  pany,
   ylim = 0:1,
   ylab = "Detection probability",
   xlab = "Distance from observers, km",
@@ -31,13 +31,13 @@ legend(
 )
 
 # https://stackoverflow.com/questions/23635662/editing-legend-text-labels-in-ggplot
-df <- data.frame(distance=dd, pa=pa, pb=pb, pdual = pdual)
+df <- data.frame(distance=dd, pa=pa, pb=pb, pany = pany)
 dfm <- melt(df, id= "distance")
 
 ggplot(dfm, aes(x=distance, y = value, color = variable)) +
   geom_line(lwd=2) +
   scale_color_manual(
-    breaks = c("pdual", "pa", "pb"),
+    breaks = c("pany", "pa", "pb"),
     labels = c("Observer A and/or B", "Observer A", "Observer B"),
     values = c("black", "red", "blue")
   ) +
