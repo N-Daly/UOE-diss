@@ -1,5 +1,6 @@
 # this script runs expecting that all the appropriate variables have been
 # defined in the environment already - double check this as each fit takes a while
+source("function Definitions.R")
 iteration_start <- proc.time()
 
 # simulate a ground truth
@@ -41,6 +42,10 @@ list_of_models$one_obs_hn$name <- "one_obs_hn"
 end <- proc.time()
 print((end-start)[3])
 
+plot_detect_pred(
+  pred_df = list_of_models$one_obs_hn$pred_detect,
+  main = list_of_models$one_obs_hn$name
+)
 
 # rm(fit); invisible(gc())
 # # # Model what A and B saw as a two observer likelihood with hn detection functions
@@ -115,7 +120,8 @@ rm(fit); invisible(gc())
 
 
 some_results <- get_scoring_differences(
-  list_of_models, true_detect_prob, true_loglambda_at_ip
+  list_of_models, true_detect_prob, true_loglambda_at_ip, 
+  distance_ips = distance_ips
 )
 
 iteration_end <- proc.time()

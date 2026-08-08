@@ -54,7 +54,7 @@ for (config in different_configs){
   fit <-  model_two_observers_hr(
     observed_points,
     ips = ips_with_detection_states,
-    bru_verbose = 1,
+    bru_verbose = how_verbose,
     mtrn_prior = matern_prior,
     prior_on_gamma = config$gamma_prior,
     prior_on_sigma = config$sigma_prior,
