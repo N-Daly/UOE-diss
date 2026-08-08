@@ -8,7 +8,6 @@ library(ggplot2)
 library(patchwork)
 library(dplyr)
 
-
 my_dir <- r"(C:\Users\ND\OneDrive - University of Edinburgh\Dissertation\UOE-diss)"
 setwd(my_dir)
 source("simulate 2D ground truth.R")
@@ -22,7 +21,7 @@ true_sigmaA <- 1.75; true_sigmaB <- 2; true_gammaA <- 1; true_gammaB <- 4
 true_range <- 500; true_sigma_grf <- 1
 
 # work out the different probabilities of detection
-distance_ips <- fm_int(list(distance = fm_mesh_1d(seq(0,8, length.out=500))))
+distance_ips <- fm_int(list(distance = fm_mesh_1d(seq(0,8, length.out=250))))
 dists <- distance_ips$distance
 
 pA <- hr(dists, sigma = true_sigmaA, gamma = true_gammaA)
@@ -83,11 +82,11 @@ true_detect_prob <- pany
 ############## Simulation
 
 
-# set.seed(800)
-# how_verbose = 1
-# # source("one iteration of gamma fits.R")
-# source("one iteration of realisation and fitting.R")
-# some_results
+set.seed(800)
+how_verbose = 1
+# source("one iteration of gamma fits.R")
+source("one iteration of realisation and fitting.R")
+some_results
 
 ############# Repeated simulations
 nsims <- 10

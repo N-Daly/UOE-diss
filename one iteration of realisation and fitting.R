@@ -52,7 +52,15 @@ rm(fit); invisible(gc())
 catt("fitting two HN ")
 start <- proc.time()
 fit <- model_two_observers_hn(
-  observed_points, matern_prior, ips = ips_with_detection_states, bru_verbose=how_verbose
+  observed_points,
+  prior_on_sigma = bm_marginal(qexp, pexp, dexp, rate = 2/8),
+  mtrn_prior = matern_prior,
+  ips = ips_with_detection_states,
+  bru_inits = list(
+    sigmaA = qexp(pnorm(2), rate = 2/8),
+    sigmaB = qexp(pnorm(2), rate = 2/8)
+  ),
+  bru_verbose=how_verbose
 )
 end <- proc.time()
 print((end-start)[3])
@@ -62,6 +70,11 @@ list_of_models$two_obs_hn <- get_preds_from_two_observers_hn_fit(fit)
 list_of_models$two_obs_hn$name <- "two_obs_hn"
 end <- proc.time()
 print((end-start)[3])
+
+plot_detect_pred(
+  pred_df = list_of_models$two_obs_hn$pred_detect,
+  main = list_of_models$two_obs_hn$name
+)
 
 rm(fit); invisible(gc())
 # Model what A and B saw as a combined observer with a  hazard-rate detection function

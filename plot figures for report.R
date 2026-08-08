@@ -51,7 +51,7 @@ ggsave("meshConstructionMethod3.pdf", height = 15 ,width = 20)
 
 time_stamp <- format(Sys.time(), "%d-%m-%Y %H-%M")
 setwd("sim_results")
-r <- readRDS("08-08-2026 12-21 simulation results.rda")
+r <- readRDS("08-08-2026 18-06 simulation results.rda")
 setwd("..")
 r
 
@@ -91,11 +91,18 @@ ae_l <- g + geom_boxplot(aes(y=lambda_AE)) +
     y = "Differenced Absolute Error score"  
   )
 
-ds_avg_prob <- g + geom_boxplot(aes(y=DS_avg_prob)) + 
+ds_avg_prob <- g + geom_boxplot(aes(y=DS_avg_prob)) +
   labs(
     title="Dawid Sebastiani score on average detection probability",
     y = "Differenced Dawid-Sebastiani score"
   )
+
+ds_detect_prob <- g + geom_boxplot(aes(y=DS_detect_prob)) + 
+  labs(
+    title="Integrated Dawid Sebastiani score on detection probability",
+    y = "Differenced Dawid-Sebastiani score"
+  )
+
 
 h <- 11; w<- 9
 ds_ll
@@ -107,8 +114,12 @@ se_ll
 ae_l
 # ggsave(paste(time_stamp, "results_AE_lambda.pdf"), height = h, width = w)
 
-ds_avg_prob
+# ds_avg_prob
 # ggsave(paste(time_stamp, "results_DS_avg_prob.pdf"), height = h, width = w)
 
+ds_detect_prob 
+no <- scale_fill_discrete(guide="none")
 
+((ds_ll + no)+(se_ll+no))/((ae_l+no)+(ds_detect_prob+no))
 
+theme
