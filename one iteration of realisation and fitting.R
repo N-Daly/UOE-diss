@@ -47,21 +47,21 @@ plot_detect_pred(
   main = list_of_models$one_obs_hn$name
 )
 
-# rm(fit); invisible(gc())
-# # # Model what A and B saw as a two observer likelihood with hn detection functions
-# catt("fitting two HN ")
-# start <- proc.time()
-# fit <- model_two_observers_hn(
-#   observed_points, matern_prior, ips = ips_with_detection_states, bru_verbose=how_verbose
-# )
-# end <- proc.time()
-# print((end-start)[3])
-# 
-# start <- proc.time()
-# list_of_models$two_obs_hn <- get_preds_from_two_observers_hn_fit(fit)
-# list_of_models$two_obs_hn$name <- "two_obs_hn"
-# end <- proc.time()
-# print((end-start)[3])
+rm(fit); invisible(gc())
+# # Model what A and B saw as a two observer likelihood with hn detection functions
+catt("fitting two HN ")
+start <- proc.time()
+fit <- model_two_observers_hn(
+  observed_points, matern_prior, ips = ips_with_detection_states, bru_verbose=how_verbose
+)
+end <- proc.time()
+print((end-start)[3])
+
+start <- proc.time()
+list_of_models$two_obs_hn <- get_preds_from_two_observers_hn_fit(fit)
+list_of_models$two_obs_hn$name <- "two_obs_hn"
+end <- proc.time()
+print((end-start)[3])
 
 rm(fit); invisible(gc())
 # Model what A and B saw as a combined observer with a  hazard-rate detection function
@@ -116,9 +116,9 @@ plot_detect_pred(
   main = list_of_models$one_obs_spline$name
 )
 
+
 rm(fit); invisible(gc())
-
-
+# scoring
 some_results <- get_scoring_differences(
   list_of_models, true_detect_prob, true_loglambda_at_ip, 
   distance_ips = distance_ips
