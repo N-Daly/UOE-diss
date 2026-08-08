@@ -309,7 +309,7 @@ test_param_tradeoff <- function(
   plot(
     error, 
     fit_time,
-    ylim = range(0, fit_time),
+    ylim = range(0, 60, fit_time),
     xlim = range(0:1, error),
     type = "c", # lines near but not connecting each point
     xlab = "MAPE as %",
@@ -334,9 +334,7 @@ test_param_tradeoff <- function(
 }
 
 
-run_now <- F
-
-if (run_now){
+if (FALSE){
   
   ### get some data
   set.seed(123)

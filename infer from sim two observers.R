@@ -84,36 +84,39 @@ true_detect_prob <- pany
 
 # set.seed(800)
 # how_verbose = 1
-# source("one iteration of realisation and fitting.R")
+# source("one iteration of gamma fits.R")
 # some_results
 
 ############## Repeated simulations
-set.seed(1234)
-nsims <- 60
+nsims <- 10
 results <- NULL
-how_verbose = 0
+how_verbose <- 0
+sim_seed <- 1234
 
 # for saving the results
 file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "simulation results.rda")
 
 for (i in 1:nsims){
-  catt("Simulation", i, "of", nsims)
-  
+  sim_seed <- sim_seed +1
+  set.seed(sim_seed)
+  catt("Simulation", i, "of", nsims, "with seed", sim_seed)
+
   # this script will use fit all the models and store the differenced scores in
   # a `some_results` df
+  # source("one iteration of gamma fits.R")
   source("one iteration of realisation and fitting.R")
 
   results <- bind_rows(results, some_results)
 
   #save results early just in case
   saveRDS(results, file=file_name)
+  print(some_results)
 }
 
 
 # plot the difference in scores, a difference of zero implies the models perform the same wrt to that score
 # all scores are negatively orientated so a positive difference means the simpler merged observer model
 # performed worse
-# results <- readRDS("28-07-2026 15-22 simulation results.rda")
 
 g <- ggplot(results, aes(fill=model)) +
   expand_limits(y=0) +
@@ -128,6 +131,6 @@ ds_avg_p <- g + geom_boxplot(aes(y=DS_avg_prob)) + labs(title="DS on average det
 (ds_ll + msep) / ( maep + ds_avg_p)
 
 ds_ll
-msep + coord_cartesian(ylim=c(NA, 1e07))
+msep #+ coord_cartesian(ylim=c(NA, 1e07))
 maep
 ds_avg_p
