@@ -27,7 +27,7 @@ list_of_models = list()
 # so we delete the fitted object before fitting another
 rm(fit); invisible(gc())
 # # Model what A and B saw as a combined observer with a hn detection function
-catt("fitting merged HN")
+catt("fitting single HN")
 start <- proc.time()
 fit <- model_one_observer_hn(
   observed_points, matern_prior, ips=ips, bru_verbose=how_verbose
@@ -42,23 +42,23 @@ end <- proc.time()
 print((end-start)[3])
 
 
+# rm(fit); invisible(gc())
+# # # Model what A and B saw as a two observer likelihood with hn detection functions
+# catt("fitting two HN ")
+# start <- proc.time()
+# fit <- model_two_observers_hn(
+#   observed_points, matern_prior, ips = ips_with_detection_states, bru_verbose=how_verbose
+# )
+# end <- proc.time()
+# print((end-start)[3])
+# 
+# start <- proc.time()
+# list_of_models$two_obs_hn <- get_preds_from_two_observers_hn_fit(fit)
+# list_of_models$two_obs_hn$name <- "two_obs_hn"
+# end <- proc.time()
+# print((end-start)[3])
+
 rm(fit); invisible(gc())
-# # Model what A and B saw as a two observer likelihood with hn detection functions
-catt("fitting two HN ")
-start <- proc.time()
-fit <- model_two_observers_hn(
-  observed_points, matern_prior, ips = ips_with_detection_states, bru_verbose=how_verbose
-)
-end <- proc.time()
-print((end-start)[3])
-
-start <- proc.time()
-list_of_models$two_obs_hn <- get_preds_from_two_observers_hn_fit(fit)
-list_of_models$two_obs_hn$name <- "two_obs_hn"
-end <- proc.time()
-print((end-start)[3])
-
-
 # Model what A and B saw as a combined observer with a  hazard-rate detection function
 catt("fitting merged HR")
 start <- proc.time()
@@ -74,40 +74,20 @@ fit <- model_one_observer_hr(
 end <- proc.time()
 print((end-start)[3])
 
+
 start <- proc.time()
 list_of_models$one_obs_HR <- get_preds_from_one_observer_hr_fit(fit)
 list_of_models$one_obs_HR$name <- "one_obs_HR"
 end <- proc.time()
 print((end-start)[3])
 
+plot_detect_pred(
+  pred_df = list_of_models$one_obs_HR$pred_detect,
+  main = list_of_models$one_obs_HR$name
+)
 
 rm(fit); invisible(gc())
-
-
-# Model what A and B saw as a two observer likelihood with hazard-rate detection functions
-# A unif(.0001, 10) prior on gammaA/B
-catt("fitting two observer HR")
-start <- proc.time()
-fit <- model_two_observers_hr(
-  observed_points,
-  ips = ips_with_detection_states,
-  bru_verbose = how_verbose,
-  mtrn_prior = matern_prior,
-  prior_on_gamma = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
-  bru_initial_params = list(
-    gammaA = qnorm(pgamma(2, shape=2, rate=1)),
-    gammaB = qnorm(pgamma(2, shape=2, rate=1))
-  )
-)
-end <- proc.time()
-print((end-start)[3])
-
-start <- proc.time()
-list_of_models$two_obs_HR <- get_preds_from_two_observers_hn_fit(fit)
-list_of_models$two_obs_HR$name <- "two_obs_HR"
-end <- proc.time()
-print((end-start)[3])
-
+source("various gamma fits.R")
 
 
 rm(fit); invisible(gc())
@@ -125,6 +105,11 @@ list_of_models$one_obs_spline <- get_preds_from_one_observer_spline_fit(fit)
 list_of_models$one_obs_spline$name <- "one_obs_spline"
 end <- proc.time()
 print((end-start)[3])
+
+plot_detect_pred(
+  pred_df = list_of_models$one_obs_spline$pred_detect,
+  main = list_of_models$one_obs_spline$name
+)
 
 rm(fit); invisible(gc())
 
