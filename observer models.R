@@ -506,8 +506,7 @@ model_two_observers_hr <- function(
       distance,
       detected,
       sigmaA, sigmaB,
-      gammaA, gammaB,
-      eps=1e-9
+      gammaA, gammaB
     ) + 
     log(2) + spde
   
@@ -518,6 +517,7 @@ model_two_observers_hr <- function(
     data = dd,
     ips = ips,
     options = list(
+      verbose = F,
       bru_verbose = bru_verbose,
       bru_initial = bru_initial_params,
       bru_max_iter = 20
