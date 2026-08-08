@@ -10,7 +10,7 @@ hr <- function(distance, sigma, gamma) {
     catt("hr : got ", sum(is.na(sigma)), " NAs")
   }
   
-  1 - exp( -(distance / sigma)^-gamma )
+  1 - exp( -(distance / sigma)^(-gamma) )
 }
 log_hr <- function(distance, sigma, gamma){
   # do (dist/sigma)^-b on log scale
@@ -20,7 +20,24 @@ log_hr <- function(distance, sigma, gamma){
   log(hr(distance, sigma, gamma))
 }
 
-
+log_1mhr <-  function(distance, sigma, gamma, eps=1e-25){
+  # ln( 1 - (1- exp(frac) ) = ln(exp(frac)) = frac
+  frac <- -(distance/sigma)^(-gamma)
+  
+  out <- pmax(-5519956, frac)
+  
+  ii <- !is.finite(frac)
+  catt("log1mhr range of output is", range(frac), "clipped to", range(out) )
+  if (any(ii)){
+    catt("nonfinite results from dists", distance[ii])
+  }
+  else{
+    catt("all outputs finite")
+  }
+  # incase the true probability of non detection is ~= 0 
+  # we output log(epsilon) instead of log(0) for small epsilon > 0
+  out 
+}
 ######## the PDFs for both detection state and distance
 
 log_g_2observer_hn <- function(distance, detected, sigmaA, sigmaB, eps=1e-9){
@@ -44,8 +61,10 @@ log_g_2observer_hn <- function(distance, detected, sigmaA, sigmaB, eps=1e-9){
   log_terms
 }
 
-log_g_2observer_hr <- function(distance, detected, sigmaA, sigmaB, gammaA, gammaB, eps=1e-9){
+log_g_2observer_hr <- function(distance, detected, sigmaA, sigmaB, gammaA, gammaB, eps=1e-6){
 
+  # catt("range of distances given to detect func", range(distance))
+  
   if( length(sigmaA) == 1 & length(distance) > 1){
     sigmaA <- rep(sigmaA, length(distance))
     sigmaB <- rep(sigmaB, length(distance))
@@ -57,16 +76,29 @@ log_g_2observer_hr <- function(distance, detected, sigmaA, sigmaB, gammaA, gamma
   }
   
   log_terms <- numeric(length(detected))
+  
   # A alone
   ii <- detected==1
-  log_terms[ii] = log_hr(distance[ii], sigmaA[ii], gammaA[ii]) + log1p( -hr(distance[ii], sigmaB[ii], gammaB[ii])*(1-eps) ) 
+  log_terms[ii] = log_hr(distance[ii], sigmaA[ii], gammaA[ii]) + log1p( -hr(distance[ii], sigmaB[ii], gammaB[ii])*(1-eps) )
   # B alone
   ii <- detected==2
   log_terms[ii] = log1p( -hr(distance[ii], sigmaA[ii], gammaA[ii])*(1-eps) ) + log_hr(distance[ii], sigmaB[ii], gammaB[ii])
   # Both A,B
   ii <- detected==3
-  log_terms[ii] =  log_hr(distance[ii], sigmaA[ii], gammaA[ii]) + hr(distance[ii], sigmaB[ii], gammaB[ii])
-                                
+  log_terms[ii] =  log_hr(distance[ii], sigmaA[ii], gammaA[ii]) + log_hr(distance[ii], sigmaB[ii], gammaB[ii])
+
+  
+  # # # A alone
+  # ii <- detected==1
+  # log_terms[ii] = log_hr(distance[ii], sigmaA[ii], gammaA[ii]) + log_1mhr(distance[ii], sigmaB[ii], gammaB[ii], eps)
+  # # B alone
+  # ii <- detected==2
+  # log_terms[ii] = log_1mhr(distance[ii], sigmaA[ii], gammaA[ii], eps) + log_hr(distance[ii], sigmaB[ii], gammaB[ii])
+  # # Both A,B
+  # ii <- detected==3
+  # log_terms[ii] =  log_hr(distance[ii], sigmaA[ii], gammaA[ii]) + hr(distance[ii], sigmaB[ii], gammaB[ii])
+
+  
   log_terms
 }
 
@@ -265,7 +297,7 @@ lets_have_a_look_at_you <- function(
     labs(title = "True underlying animal density or intensity") +
     scale_fill_continuous(
       name = "Density",
-      limits = approx_intensity_range
+      limits = range(approx_intensity_range, pxls$lambda)
       ) + 
     theme( 
       axis.title.x = element_blank(),
