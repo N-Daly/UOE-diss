@@ -1,5 +1,7 @@
 # this script runs expecting that all the appropriate variables have been
 # defined in the environment already - double check this as each fit takes a while
+
+source("function Definitions.R")
 iteration_start <- proc.time()
 
 # simulate a ground truth
@@ -78,25 +80,27 @@ for (config in different_configs){
 
   rm(fit); invisible(gc())
   catt("fitting ", config$name)
-  start <- proc.time()
+  fit_start <- proc.time()
   fit <-  model_two_observers_hr(
     observed_points,
     ips = ips_with_detection_states,
-    bru_verbose = 1,
+    bru_verbose = 3,
     mtrn_prior = matern_prior,
     prior_on_gamma = config$gamma_prior,
     prior_on_sigma = config$sigma_prior,
     bru_initial_params = config$bru_inits
   )
-  end <- proc.time()
-  print((end-start)[3])
+  fit_end <- proc.time()
+  fit_time <- (fit_end-fit_start)[[3]]
+  print(fit_time)
   
   # a picture
-  bru_convergence_plot(fit)
+  print(bru_convergence_plot(fit))
 
   start <- proc.time()
   list_of_models[[config$name]] <- get_preds_from_two_observers_hr_fit(fit)
   list_of_models[[config$name]]$name <- config$name
+  list_of_models[[config$name]]$fit_time <- round(fit_time)
   end <- proc.time()
   print((end-start)[3])
   
