@@ -91,8 +91,37 @@ plot_detect_pred(
   main = list_of_models$one_obs_HR$name
 )
 
+
 rm(fit); invisible(gc())
-source("various gamma fits.R")
+catt("fitting dual HR")
+start <- proc.time()
+fit <- model_two_observers_hr(
+  observed_points,
+  prior_on_gamma = bm_marginal(qunif, punif, dunif, min = 0.01, max = 10),
+  prior_on_sigma = bm_marginal(qexp, pexp, dexp, rate = 1/2),
+  bru_initial_params = list(
+    gammaA = qnorm(punif(1, min = 0.01, max = 10)),
+    gammaB = qnorm(punif(4, min = 0.01, max = 10)),
+    sigmaA = qnorm(pexp(2, rate = 1/2)),
+    sigmaB = qnorm(pexp(2, rate = 1/2))
+  ),
+  mtrn_prior = matern_prior,
+  ips=ips_with_detection_states, 
+  bru_verbose=how_verbose
+)
+end <- proc.time()
+print((end-start)[3])
+
+start <- proc.time()
+list_of_models$two_obs_HR <- get_preds_from_two_observers_hr_fit(fit)
+list_of_models$two_obs_HR$name <- "two_obs_HR"
+end <- proc.time()
+print((end-start)[3])
+
+plot_detect_pred(
+  pred_df = list_of_models$two_obs_HR$pred_detect,
+  main = list_of_models$two_obs_HR$name
+)
 
 
 rm(fit); invisible(gc())
@@ -120,7 +149,9 @@ plot_detect_pred(
 rm(fit); invisible(gc())
 # scoring
 some_results <- get_scoring_differences(
-  list_of_models, true_detect_prob, true_loglambda_at_ip, 
+  list_of_models, 
+  true_detect = true_detect_prob,
+  true_loglambda = true_loglambda_at_ip, 
   distance_ips = distance_ips
 )
 
