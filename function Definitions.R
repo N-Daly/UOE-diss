@@ -163,10 +163,13 @@ get_scoring_differences <- function(
     true_detect,
     true_loglambda,
     distance_ips,
-    true_avg_prob_detect = mean(true_detect),
-    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly)
+    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
+    half_width = 8
 ){
   base_mod <- models[[1]] # should always be the one observer hn
+  
+  # this of course relies on true_detect_prob having been evaluated at the distance_ips points
+  true_avg_prob_detect = sum(true_detect_prob * distance_ips$weight)/half_width
   
   # get the scores of this base model
   base_mod$DS_loglambda <- dawid_sebastiani_score(base_mod$pred_loglambda, true_loglambda)
@@ -179,6 +182,8 @@ get_scoring_differences <- function(
   
   base_mod$DS_detect_prob <- get_integrated_DS_score_on_detection_prob(base_mod$pred_detect, true_detect_prob, distance_ips)
   
+  base_mod$DS_avg_prob <- dawid_sebastiani_score(base_mod$pred_avg, true_avg_prob_detect)
+  
   score_diffs <- NULL
   for (i in 2:length(models)){
     mod <- models[[i]]
@@ -189,6 +194,7 @@ get_scoring_differences <- function(
     mod$lambda_AE <- abs(mod$pred_lambda$median - exp(true_loglambda) )
     mod$detect_AE <- abs(mod$pred_detect$median - true_detect)
     mod$DS_detect_prob <- get_integrated_DS_score_on_detection_prob(mod$pred_detect, true_detect_prob, distance_ips)
+    mod$DS_avg_prob <- dawid_sebastiani_score(mod$pred_avg, true_avg_prob_detect)
     
     # now take the difference in scores between this and the base
     # and integrate it over the domain
@@ -197,7 +203,8 @@ get_scoring_differences <- function(
       loglambda_SE = sum(ips_for_pred$weight * (mod$loglambda_SE - base_mod$loglambda_SE)),
       lambda_AE = sum(ips_for_pred$weight * (mod$lambda_AE - base_mod$lambda_AE)),
       detect_AE = mean(mod$detect_AE - base_mod$detect_AE),
-      DS_detect_prob = mod$DS_detect_prob - base_mod$DS_detect_prob
+      DS_detect_prob = mod$DS_detect_prob - base_mod$DS_detect_prob,
+      DS_avg_detect_prob = mod$DS_avg_prob - base_mod$DS_avg_prob
     )
     
     mod_diff$model <- mod$name
