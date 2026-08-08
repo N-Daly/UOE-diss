@@ -83,11 +83,11 @@ true_detect_prob <- pany
 ############## Simulation
 
 
-set.seed(800)
-how_verbose = 1
-# source("one iteration of gamma fits.R")
-source("one iteration of realisation and fitting.R")
-some_results
+# set.seed(800)
+# how_verbose = 1
+# # source("one iteration of gamma fits.R")
+# source("one iteration of realisation and fitting.R")
+# some_results
 
 ############# Repeated simulations
 nsims <- 10
@@ -111,7 +111,9 @@ for (i in 1:nsims){
   results <- bind_rows(results, some_results)
 
   #save results early just in case
+  setwd("sim_results")
   saveRDS(results, file=file_name)
+  setwd(my_dir)
   print(some_results)
 }
 
@@ -132,7 +134,7 @@ ds_detect <- g + geom_boxplot(aes(y=DS_detect_prob)) + labs(title="integrated DS
 
 
 ds_ll
-msep #+ coord_cartesian(ylim=c(NA, 1e07))
+msep 
 maep
 maedetectp
 ds_detect

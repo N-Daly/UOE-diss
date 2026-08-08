@@ -49,7 +49,11 @@ ggplot() + gg(mm) +
 ggsave("meshConstructionMethod3.pdf", height = 15 ,width = 20)
 
 
-r <- readRDS("01-08-2026 12-15 amended simulation results.rda")
+time_stamp <- format(Sys.time(), "%d-%m-%Y %H-%M")
+setwd("sim_results")
+r <- readRDS("08-08-2026 12-21 simulation results.rda")
+setwd("..")
+r
 
 g <- ggplot(r, aes(fill=model)) +
   expand_limits(y=0) +
@@ -62,7 +66,7 @@ g <- ggplot(r, aes(fill=model)) +
     axis.title.y  = element_text(size=rel(2)),
     plot.title = element_text(size=rel(2))#,
     # plot.margin=grid::unit(c(0,0,0,0), "mm")
-    ) + 
+    ) #+ 
   scale_fill_discrete(
     name="Model",
     breaks=c("one_obs_HR", "one_obs_spline" , "two_obs_hn", "two_obs_HR"),
@@ -80,7 +84,6 @@ se_ll <- g + geom_boxplot(aes(y=loglambda_SE)) +
     title="Integrated Squared Error on mean log lambda",
     y = "Differenced Squared Error score"
   )
-se_ll <- se_ll + coord_cartesian(ylim=c(NA, 1e06))
 
 ae_l <- g + geom_boxplot(aes(y=lambda_AE)) + 
   labs(
@@ -96,17 +99,16 @@ ds_avg_prob <- g + geom_boxplot(aes(y=DS_avg_prob)) +
 
 h <- 11; w<- 9
 ds_ll
-ggsave("results_DS_loglambda.pdf", height = h, width = w)
+# ggsave(paste(time_stamp, "results_DS_loglambda.pdf"), height = h, width = w)
 
 se_ll
-ggsave("results_SE_loglambda.pdf", height = h, width = w)
+# ggsave(paste(time_stamp, "results_SE_loglambda.pdf"), height = h, width = w)
 
 ae_l
-ggsave("results_AE_lambda.pdf", height = h, width = w)
+# ggsave(paste(time_stamp, "results_AE_lambda.pdf"), height = h, width = w)
 
 ds_avg_prob
-ggsave("results_DS_avg_prob.pdf", height = h, width = w)
-
+# ggsave(paste(time_stamp, "results_DS_avg_prob.pdf"), height = h, width = w)
 
 
 
