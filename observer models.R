@@ -43,8 +43,8 @@ model_one_observer_hn <- function(
 get_preds_from_one_observer_hn_fit <- function(
     fit,
     ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
-    desired = c("detect", "lambda", "avg_prob"),
-    dists = seq(0,8, length.out=500),
+    desired = c("detect", "lambda"),
+    dists_for_pred = dists,
     m = 1000 # MC samples
 ){
   # assumes the detection functions are defined already
@@ -69,20 +69,8 @@ get_preds_from_one_observer_hn_fit <- function(
     
     lst$pred_detect <- predict(
       fit,
-      data.frame(distance=dists),
+      data.frame(distance = dists_for_pred),
       formula = ~ hn(distance, sigma),
-      n.samples = m
-    )
-  }
-  
-  if ( "avg_prob" %in% desired ){
-    # make an ips to integrate the the detection prob from [0,8]
-    detect_ips <- fm_int(list(distance = fm_mesh_1d(dists)) )
-    
-    lst$pred_avg_prob <- predict(
-      fit,
-      detect_ips,
-      formula = ~ sum(detect_ips$weight * hn(distance, sigma) ),
       n.samples = m
     )
   }
@@ -126,8 +114,8 @@ model_one_observer_spline <- function(
 get_preds_from_one_observer_spline_fit <- function(
     fit,
     ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
-    desired = c("detect", "lambda", "avg_prob"),
-    dists = seq(0,8, length.out=500),
+    desired = c("detect", "lambda"),
+    dists_for_pred = dists,
     m = 1000 # MC samples
 ){
   # assumes the detection functions are defined already
@@ -153,22 +141,21 @@ get_preds_from_one_observer_spline_fit <- function(
     
     lst$pred_detect <- predict(
       fit,
-      data.frame(distance = dists),
-      # clip the predected values
-      formula = ~ pmin(spline_detect_func(spline_spde), 1),
+      data.frame(distance = dists_for_pred),
+      formula = ~ spline_detect_func(spline_spde),
       n.samples = m
     )
   }
   
   if ( "avg_prob" %in% desired ){
     # make an ips to integrate the the detection prob from [0,8]
-    detect_ips <- fm_int(list(distance = fm_mesh_1d(dists)) )
+    detect_ips <- fm_int(list(distance = fm_mesh_1d(dists_for_pred)) )
     
     lst$pred_avg_prob <- predict(
       fit,
       detect_ips,
       # not clipping predictions here as i want to preserve uncertainty
-      formula = ~ sum(detect_ips$weight * spline_detect_func(spline_spde) ),
+      formula = ~ spline_detect_func(spline_spde) ,
       n.samples = m
     )
   }
@@ -232,8 +219,8 @@ model_two_observers_hn <- function(
 get_preds_from_two_observers_hn_fit <- function(
     fit,
     ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
-    desired = c("detect", "lambda", "avg_prob"),
-    dists = seq(0,8, length.out=500),
+    desired = c("detect", "lambda"),
+    dists_for_pred = dists,
     m = 1000 # MC samples
 ){
   # assumes the detection functions are defined already
@@ -258,24 +245,11 @@ get_preds_from_two_observers_hn_fit <- function(
     
     lst$pred_detect <- predict(
       fit,
-      data.frame(distance = dists),
+      data.frame(distance = dists_for_pred),
       formula = ~ detect_func_2observer_hn(distance, sigmaA, sigmaB),
       n.samples = m
     )
   }
-  
-  if ( "avg_prob" %in% desired ){
-    # make an ips to integrate the the detection prob from [0,8]
-    detect_ips <- fm_int(list(distance = fm_mesh_1d(dists) ) )
-    
-    lst$pred_avg_prob <- predict(
-      fit,
-      detect_ips,
-      formula = ~ sum(detect_ips$weight *detect_func_2observer_hn(distance, sigmaA, sigmaB) ),
-      n.samples = m
-    )
-  }
-  
   
   lst$name <- deparse(substitute(fit))
   lst
@@ -362,8 +336,8 @@ get_preds_from_one_observer_hr_fit <- function(
     fit,
     ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
     fixed_gamma_val = NULL, # if NULL, gamma is assumed to be a r.v
-    desired = c("detect", "lambda", "avg_prob"),
-    dists = seq(0,8, length.out=500),
+    desired = c("detect", "lambda"),
+    dists_for_pred = dists,
     m = 1000 # MC samples
 ){
   # assumes the detection functions are defined already
@@ -395,20 +369,8 @@ get_preds_from_one_observer_hr_fit <- function(
     
     lst$pred_detect <- predict(
       fit,
-      data.frame(distance=dists),
+      data.frame(distance = dists_for_pred),
       formula = ~ hr(distance, sigma, gamma),
-      n.samples = m
-    )
-  }
-  
-  if ( "avg_prob" %in% desired ){
-    # make an ips to integrate the the detection prob from [0,8]
-    detect_ips <- fm_int(list(distance = fm_mesh_1d(dists) ) )
-    
-    lst$pred_avg_prob <- predict(
-      fit,
-      detect_ips,
-      formula = ~ sum(detect_ips$weight *hr(distance, sigma, gamma) ),
       n.samples = m
     )
   }
@@ -530,8 +492,8 @@ get_preds_from_two_observers_hr_fit <- function(
     fit,
     ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
     fixed_gamma_val = NULL, # if NULL, gamma is assumed to be a r.v
-    desired = c("detect", "lambda", "avg_prob"),
-    dists = seq(0,8, length.out=500),
+    desired = c("detect", "lambda"),
+    dists_for_pred = dists,
     m = 1000 # MC samples
 ){
   # assumes the detection functions are defined already
@@ -555,51 +517,20 @@ get_preds_from_two_observers_hr_fit <- function(
   if ( "detect" %in% desired){
     
     # if NULL, gamma is assumed to be a r.v
-    if ( is.null(fixed_gamma_val)){
-      
-      # sample both sigma and gamma to get detection probabilities
-      lst$pred_detect <- predict(
-        fit,
-        data.frame(distance=dists),
-        formula = ~ detect_func_2_observer_hr(distance, sigmaA, sigmaB, gammaA, gammaB),
-        n.samples = m
-      )
-    } else{
-      
-      # sample only sigma to get detection probabilities
-      lst$pred_detect <- predict(
-        fit,
-        data.frame(distance=dists),
-        formula = ~ detect_func_2_observer_hr(distance, sigmaA, sigmaB, gammaA=fixed_gamma_val, gammaB=fixed_gamma_val),
-        n.samples = m
-      )
+    if ( !is.null(fixed_gamma_val)){
+      gammaA <- fixed_gamma_val
+      gammaB <- fixed_gamma_val
     }
-  }
-  
-  if ( "avg_prob" %in% desired){
-    
-    # make an ips to integrate the the detection prob from [0,8]
-    detect_ips <- fm_int(list(distance = fm_mesh_1d(dists) ) )
-    
+      
     # sample both sigma and gamma to get detection probabilities
-    if ( is.null(fixed_gamma_val)){
-      lst$pred_avg_prob <- predict(
-        fit,
-        detect_ips,
-        formula = ~ sum(detect_ips$weight *detect_func_2_observer_hr(distance, sigmaA, sigmaB, gammaA, gammaB) ),
-        n.samples = m
-      )
-    } else {
-      # sample only sigma to get detection probabilities
-      lst$pred_avg_prob <- predict(
-        fit,
-        detect_ips,
-        formula = ~ sum(detect_ips$weight *detect_func_2_observer_hr(distance, sigmaA, sigmaB, gammaA=fixed_gamma_val, gammaB=fixed_gamma_val) ),
-        n.samples = m
-      )
-    }
+    lst$pred_detect <- predict(
+      fit,
+      data.frame(distance = dists_for_pred),
+      formula = ~ detect_func_2_observer_hr(distance, sigmaA, sigmaB, gammaA, gammaB),
+      n.samples = m
+    )
   }
-  
+ 
   lst$name <- deparse(substitute(fit))
   lst
 }

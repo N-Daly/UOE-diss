@@ -139,10 +139,30 @@ dawid_sebastiani_score <- function(post_pred, true_value){
   ( (true_value - E)^2 / V)  + log(V)
 }
 
+get_integrated_DS_score_on_detection_prob <- function(
+    pred_df,
+    true_detect_prob,
+    distance_ips
+){
+  rows_indices <- array(1:nrow(pred_df))
+  
+  DS_at_each_ip <- apply(
+    rows_indices,
+    1,
+    function(i){ dawid_sebastiani_score(pred_df[i,], true_detect_prob[i])}
+  )
+  # there will be a NaN DS score at distance = 0 because there is zero uncertainty
+  # the easiest thing is just to ignore this term in the integration
+  # its associated weight will be small if the ips is medium sized
+  sum(distance_ips$distance * DS_at_each_ip, na.rm = T)
+  
+}
+
 get_scoring_differences <- function(
     models,
     true_detect,
     true_loglambda,
+    distance_ips,
     true_avg_prob_detect = mean(true_detect),
     ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly)
 ){
@@ -157,7 +177,7 @@ get_scoring_differences <- function(
   
   base_mod$detect_AE <- abs(base_mod$pred_detect$median - true_detect)
   
-  base_mod$DS_avg_prob <- dawid_sebastiani_score(base_mod$pred_avg_prob, true_avg_prob_detect)
+  base_mod$DS_detect_prob <- get_integrated_DS_score_on_detection_prob(base_mod$pred_detect, true_detect_prob, distance_ips)
   
   score_diffs <- NULL
   for (i in 2:length(models)){
@@ -168,7 +188,7 @@ get_scoring_differences <- function(
     mod$loglambda_SE <- (mod$pred_loglambda$mean - true_loglambda)^2
     mod$lambda_AE <- abs(mod$pred_lambda$median - exp(true_loglambda) )
     mod$detect_AE <- abs(mod$pred_detect$median - true_detect)
-    mod$DS_avg_prob <- dawid_sebastiani_score(mod$pred_avg_prob, true_avg_prob_detect)
+    mod$DS_detect_prob <- get_integrated_DS_score_on_detection_prob(mod$pred_detect, true_detect_prob, distance_ips)
     
     # now take the difference in scores between this and the base
     # and integrate it over the domain
@@ -177,7 +197,7 @@ get_scoring_differences <- function(
       loglambda_SE = sum(ips_for_pred$weight * (mod$loglambda_SE - base_mod$loglambda_SE)),
       lambda_AE = sum(ips_for_pred$weight * (mod$lambda_AE - base_mod$lambda_AE)),
       detect_AE = mean(mod$detect_AE - base_mod$detect_AE),
-      DS_avg_prob = mod$DS_avg_prob - base_mod$DS_avg_prob
+      DS_detect_prob = mod$DS_detect_prob - base_mod$DS_detect_prob
     )
     
     mod_diff$model <- mod$name
@@ -208,19 +228,27 @@ dist_to_nearest_line_transect <- function(pts, transects = mexdolphin_sf$sampler
 catt <- function(...){ cat(..., "\n")}# pet peeve
 
 # just plot the prediction of detection probabilites
-plot_detect_pred <- function(pred_df, main = "", true=true_detect_prob, d= dists){
+plot_detect_pred <- function(pred_df, main = "", true=true_detect_prob, d=dists){
+  
+  # don't trust your inputs
+  ii <- order(d)
+  d <- d[ii]
+  pred_df <- pred_df[ii,]
+  true <- true[ii]
+  
   plot(
     d,
     pred_df$mean,
     ylim = range(0:1, pred_df$q0.975),
     main = main,
     ylab = "Prob of detection",
-    xlab = "distance"
+    xlab = "distance",
+    type = "l"
   )
   lines(d, pred_df$q0.975)
   lines(d, pred_df$q0.025)
   
-  lines(d, true, col = "red", lwd =2)
+  lines(d, true, col = "red", lwd =3)
 }
 
 pretty_print_seconds <- function(secs){

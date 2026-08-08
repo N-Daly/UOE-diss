@@ -22,7 +22,8 @@ true_sigmaA <- 1.75; true_sigmaB <- 2; true_gammaA <- 1; true_gammaB <- 4
 true_range <- 500; true_sigma_grf <- 1
 
 # work out the different probabilities of detection
-dists <- seq(0,8, length.out=500)
+distance_ips <- fm_int(list(distance = fm_mesh_1d(seq(0,8, length.out=500))))
+dists <- distance_ips$distance
 
 pA <- hr(dists, sigma = true_sigmaA, gamma = true_gammaA)
 pB <- hr(dists, sigma = true_sigmaB, gamma = true_gammaB)
@@ -82,12 +83,13 @@ true_detect_prob <- pany
 ############## Simulation
 
 
-# set.seed(800)
-# how_verbose = 1
+set.seed(800)
+how_verbose = 1
 # source("one iteration of gamma fits.R")
-# some_results
+source("one iteration of realisation and fitting.R")
+some_results
 
-############## Repeated simulations
+############# Repeated simulations
 nsims <- 10
 results <- NULL
 how_verbose <- 0
@@ -126,11 +128,11 @@ ds_ll <-g + geom_boxplot(aes(y=DS_loglambda)) + labs(title="integrated DS on log
 msep <- g + geom_boxplot(aes(y=loglambda_SE)) + labs(title="integrated SE on mean log lambda")
 maep <- g + geom_boxplot(aes(y=lambda_AE)) + labs(title = "integrated AE on median lambda")
 maedetectp <- g + geom_boxplot(aes(y=detect_AE)) + labs(title="mean AE on detection prob")
-ds_avg_p <- g + geom_boxplot(aes(y=DS_avg_prob)) + labs(title="DS on average detection prob")
+ds_detect <- g + geom_boxplot(aes(y=DS_detect_prob)) + labs(title="integrated DS on detection prob")
 
-(ds_ll + msep) / ( maep + ds_avg_p)
 
 ds_ll
 msep #+ coord_cartesian(ylim=c(NA, 1e07))
 maep
-ds_avg_p
+maedetectp
+ds_detect
