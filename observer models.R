@@ -180,14 +180,15 @@ model_two_observers_hn <- function(
   mtrn_prior = matern_prior,
   half_width = 8,
   bru_verbose = 0,
-  bru_inits = list()
+  bru_initial_params = list()
 ){
 
   matern_prior <- mtrn_prior
   
-  if (identical(bru_inits, list())){
+  if (identical(bru_initial_params, list())){
+    
     lambda_sigma <- 2/half_width
-    bru_inits <- list(
+    bru_initial_params <- list(
       sigmaA = qnorm(pexp(2, lambda_sigma)),
       sigmaB = qnorm(pexp(2, lambda_sigma))
     ) 
@@ -220,7 +221,7 @@ model_two_observers_hn <- function(
     ips = ips,
     options = list(
       bru_verbose= bru_verbose,
-      bru_initial = bru_inits
+      bru_initial = bru_initial_params
     )
   )
   
