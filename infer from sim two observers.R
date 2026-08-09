@@ -17,16 +17,20 @@ source("mesh construction methods.R")
 
 ########### state the ground truth
 
-true_sigmaA <- 1.75; true_sigmaB <- 2; true_gammaA <- 1; true_gammaB <- 4
+# true_sigmaA <- 1.75; true_sigmaB <- 2; true_gammaA <- 1; true_gammaB <- 4
+true_sigmaA <- 2; true_sigmaB <- 4
 true_range <- 500; true_sigma_grf <- 1
 
 # work out the different probabilities of detection
 distance_ips <- fm_int(list(distance = fm_mesh_1d(seq(0,8, length.out=250))))
 dists <- distance_ips$distance
 
-pA <- hr(dists, sigma = true_sigmaA, gamma = true_gammaA)
-pB <- hr(dists, sigma = true_sigmaB, gamma = true_gammaB)
-pany = detect_func_2_observer_hr(dists, true_sigmaA, true_sigmaB, true_gammaA, true_gammaB)
+# pA <- hr(dists, sigma = true_sigmaA, gamma = true_gammaA)
+# pB <- hr(dists, sigma = true_sigmaB, gamma = true_gammaB)
+# pany = detect_func_2_observer_hr(dists, true_sigmaA, true_sigmaB, true_gammaA, true_gammaB)
+pA <- hn(dists, sigma = true_sigmaA)
+pB <- hn(dists, sigma = true_sigmaB)
+pany <- detect_func_2observer_hn(dists, sigmaA = true_sigmaA, sigmaB = true_sigmaB)
 
 true_detect_prob_df <- data.frame(
   distance = dists,
@@ -88,8 +92,8 @@ true_detect_prob <- pany
 # source("one iteration of realisation and fitting.R")
 # some_results
 
-############# Repeated simulations
-nsims <- 30
+############ Repeated simulations
+nsims <- 15
 results <- NULL
 how_verbose <- 0
 sim_seed <- 1234 - 1
@@ -133,7 +137,7 @@ ds_detect <- g + geom_boxplot(aes(y=DS_detect_prob)) + labs(title="integrated DS
 ds_avg_prob <- g + geom_boxplot(aes(y=DS_avg_prob_detect)) + labs(title=" DS on avg prob detect")
 
 ds_ll
-msep 
+msep
 maep
 maedetectp
 ds_detect
