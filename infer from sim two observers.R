@@ -82,17 +82,17 @@ true_detect_prob <- pany
 ############## Simulation
 
 
-set.seed(800)
-how_verbose = 1
-# source("one iteration of gamma fits.R")
-source("one iteration of realisation and fitting.R")
-some_results
+# set.seed(800)
+# how_verbose = 1
+# # source("one iteration of gamma fits.R")
+# source("one iteration of realisation and fitting.R")
+# some_results
 
 ############# Repeated simulations
-nsims <- 10
+nsims <- 30
 results <- NULL
 how_verbose <- 0
-sim_seed <- 1234
+sim_seed <- 1234 - 1
 
 # for saving the results
 file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "simulation results.rda")
@@ -130,7 +130,7 @@ msep <- g + geom_boxplot(aes(y=loglambda_SE)) + labs(title="integrated SE on mea
 maep <- g + geom_boxplot(aes(y=lambda_AE)) + labs(title = "integrated AE on median lambda")
 maedetectp <- g + geom_boxplot(aes(y=detect_AE)) + labs(title="mean AE on detection prob")
 ds_detect <- g + geom_boxplot(aes(y=DS_detect_prob)) + labs(title="integrated DS on detection prob")
-
+ds_avg_prob <- g + geom_boxplot(aes(y=DS_avg_prob_detect)) + labs(title=" DS on avg prob detect")
 
 ds_ll
 msep 

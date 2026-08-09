@@ -11,7 +11,7 @@ sim_info <- simulate_lcgp_dual_obs_HR_thinning(
   true_rho = true_range, true_sigma_GRF = true_sigma_grf
 )
 
-lets_have_a_look_at_you(sim_info, detect_df = true_detect_prob_df)
+# lets_have_a_look_at_you(sim_info, detect_df = true_detect_prob_df)
 
 
 #the sampled points are in observed_points
@@ -42,10 +42,10 @@ list_of_models$one_obs_hn$name <- "one_obs_hn"
 end <- proc.time()
 print((end-start)[3])
 
-plot_detect_pred(
-  pred_df = list_of_models$one_obs_hn$pred_detect,
-  main = list_of_models$one_obs_hn$name
-)
+# plot_detect_pred(
+#   pred_df = list_of_models$one_obs_hn$pred_detect,
+#   main = list_of_models$one_obs_hn$name
+# )
 
 rm(fit); invisible(gc())
 # # Model what A and B saw as a two observer likelihood with hn detection functions
@@ -71,10 +71,10 @@ list_of_models$two_obs_hn$name <- "two_obs_hn"
 end <- proc.time()
 print((end-start)[3])
 
-plot_detect_pred(
-  pred_df = list_of_models$two_obs_hn$pred_detect,
-  main = list_of_models$two_obs_hn$name
-)
+# plot_detect_pred(
+#   pred_df = list_of_models$two_obs_hn$pred_detect,
+#   main = list_of_models$two_obs_hn$name
+# )
 
 rm(fit); invisible(gc())
 # Model what A and B saw as a combined observer with a  hazard-rate detection function
@@ -98,11 +98,11 @@ list_of_models$one_obs_HR <- get_preds_from_one_observer_hr_fit(fit)
 list_of_models$one_obs_HR$name <- "one_obs_HR"
 end <- proc.time()
 print((end-start)[3])
-
-plot_detect_pred(
-  pred_df = list_of_models$one_obs_HR$pred_detect,
-  main = list_of_models$one_obs_HR$name
-)
+# 
+# plot_detect_pred(
+#   pred_df = list_of_models$one_obs_HR$pred_detect,
+#   main = list_of_models$one_obs_HR$name
+# )
 
 
 rm(fit); invisible(gc())
@@ -131,10 +131,10 @@ list_of_models$two_obs_HR$name <- "two_obs_HR"
 end <- proc.time()
 print((end-start)[3])
 
-plot_detect_pred(
-  pred_df = list_of_models$two_obs_HR$pred_detect,
-  main = list_of_models$two_obs_HR$name
-)
+# plot_detect_pred(
+#   pred_df = list_of_models$two_obs_HR$pred_detect,
+#   main = list_of_models$two_obs_HR$name
+# )
 
 
 rm(fit); invisible(gc())
@@ -153,10 +153,10 @@ list_of_models$one_obs_spline$name <- "one_obs_spline"
 end <- proc.time()
 print((end-start)[3])
 
-plot_detect_pred(
-  pred_df = list_of_models$one_obs_spline$pred_detect,
-  main = list_of_models$one_obs_spline$name
-)
+# plot_detect_pred(
+#   pred_df = list_of_models$one_obs_spline$pred_detect,
+#   main = list_of_models$one_obs_spline$name
+# )
 
 
 rm(fit); invisible(gc())

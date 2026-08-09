@@ -17,41 +17,41 @@ source("observer models.R")
 source("function Definitions.R")
 source("mesh construction methods.R")
 
-# this is the one used for the model's spatial effects
-mesh <- make_spatially_varying_mesh3(60, coarse=60)
-
-tran_segm <- st_buffer(mexdolphin_sf$samplers, 8, endCapStyle = "FLAT")
-
-ggplot() +
-  gg(mesh, edge.color = "black") + 
-  gg(tran_segm, alpha = .1, colour = "blue") + 
-  gg(mexdolphin_sf$ppoly, alpha = 0.2,  color="red") +
-  ggspatial::annotation_scale(data=mexdolphin_sf$ppoly) +
-  ggtitle("Mesh of the study region") + 
-  theme(
-    plot.title=element_text(size=rel(2),face="bold"),
-    plot.margin=grid::unit(c(0,0,0,0), "mm")
-    )
-
-ggsave("modelMesh.pdf", height = 10, width = 20)
-
-
-# demonstrate mesh construct method 3 -  the two hexagonal lattices
-mm <- make_spatially_varying_mesh3(5)
-
-ggplot() + gg(mm) + 
-  ggtitle("A mesh composed of fine and coarse hexagonal lattices") + 
-  theme(
-    plot.title=element_text(size=rel(2),face="bold")
-  ) +
-  gg(mexdolphin_sf$ppoly, col = "red", alpha= .2)
-
-ggsave("meshConstructionMethod3.pdf", height = 15 ,width = 20)
+# # this is the one used for the model's spatial effects
+# mesh <- make_spatially_varying_mesh3(60, coarse=60)
+# 
+# tran_segm <- st_buffer(mexdolphin_sf$samplers, 8, endCapStyle = "FLAT")
+# 
+# ggplot() +
+#   gg(mesh, edge.color = "black") + 
+#   gg(tran_segm, alpha = .1, colour = "blue") + 
+#   gg(mexdolphin_sf$ppoly, alpha = 0.2,  color="red") +
+#   ggspatial::annotation_scale(data=mexdolphin_sf$ppoly) +
+#   ggtitle("Mesh of the study region") + 
+#   theme(
+#     plot.title=element_text(size=rel(2),face="bold"),
+#     plot.margin=grid::unit(c(0,0,0,0), "mm")
+#     )
+# 
+# ggsave("modelMesh.pdf", height = 10, width = 20)
+# 
+# 
+# # demonstrate mesh construct method 3 -  the two hexagonal lattices
+# mm <- make_spatially_varying_mesh3(5)
+# 
+# ggplot() + gg(mm) + 
+#   ggtitle("A mesh composed of fine and coarse hexagonal lattices") + 
+#   theme(
+#     plot.title=element_text(size=rel(2),face="bold")
+#   ) +
+#   gg(mexdolphin_sf$ppoly, col = "red", alpha= .2)
+# 
+# ggsave("meshConstructionMethod3.pdf", height = 15 ,width = 20)
 
 
 time_stamp <- format(Sys.time(), "%d-%m-%Y %H-%M")
 setwd("sim_results")
-r <- readRDS("08-08-2026 18-06 simulation results.rda")
+r <- readRDS("09-08-2026 00-35 simulation results.rda")
 setwd("..")
 r
 
@@ -66,8 +66,8 @@ g <- ggplot(r, aes(fill=model)) +
     axis.title.y  = element_text(size=rel(2)),
     plot.title = element_text(size=rel(2))#,
     # plot.margin=grid::unit(c(0,0,0,0), "mm")
-    ) #+ 
-  scale_fill_discrete(
+    ) + 
+   scale_fill_discrete(
     name="Model",
     breaks=c("one_obs_HR", "one_obs_spline" , "two_obs_hn", "two_obs_HR"),
     labels=c("HR", "Spline", "Dual HN", "Dual HR")
@@ -91,7 +91,7 @@ ae_l <- g + geom_boxplot(aes(y=lambda_AE)) +
     y = "Differenced Absolute Error score"  
   )
 
-ds_avg_prob <- g + geom_boxplot(aes(y=DS_avg_prob)) +
+ds_avg_prob <- g + geom_boxplot(aes(y=DS_avg_detect_prob)) +
   labs(
     title="Dawid Sebastiani score on average detection probability",
     y = "Differenced Dawid-Sebastiani score"
@@ -105,19 +105,22 @@ ds_detect_prob <- g + geom_boxplot(aes(y=DS_detect_prob)) +
 
 
 h <- 11; w<- 9
-ds_ll
+ds_ll + coord_cartesian(ylim = c(NA, 5e05))
 # ggsave(paste(time_stamp, "results_DS_loglambda.pdf"), height = h, width = w)
 
 se_ll
 # ggsave(paste(time_stamp, "results_SE_loglambda.pdf"), height = h, width = w)
 
-ae_l
+ae_l + coord_cartesian(ylim = c(-2500, NA))
 # ggsave(paste(time_stamp, "results_AE_lambda.pdf"), height = h, width = w)
 
-# ds_avg_prob
+ds_avg_prob
 # ggsave(paste(time_stamp, "results_DS_avg_prob.pdf"), height = h, width = w)
 
-ds_detect_prob 
+ds_detect_prob  + coord_cartesian(ylim = c(-3e05, 5e05))
+# ggsave(paste(time_stamp, "results_DS_detect_prob.pdf"), height = h, width = w)
+
+
 no <- scale_fill_discrete(guide="none")
 
 ((ds_ll + no)+(se_ll+no))/((ae_l+no)+(ds_detect_prob+no))
