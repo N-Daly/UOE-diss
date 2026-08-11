@@ -40,7 +40,7 @@ log_1mhr <-  function(distance, sigma, gamma, eps=1e-25){
 }
 ######## the PDFs for both detection state and distance
 
-log_g_2observer_hn <- function(distance, detected, sigmaA, sigmaB, eps=1e-9){
+log_g_2observer_hn <- function(distance, detected, sigmaA, sigmaB, eps=1e-15){
   
   if ( length(sigmaA) == 1 & length(distance) > 1 ){
     sigmaA <- rep(sigmaA, length(distance))
@@ -202,7 +202,7 @@ get_scoring_differences <- function(
       DS_loglambda = sum(ips_for_pred$weight * (mod$DS_loglambda - base_mod$DS_loglambda)),
       loglambda_SE = sum(ips_for_pred$weight * (mod$loglambda_SE - base_mod$loglambda_SE)),
       lambda_AE = sum(ips_for_pred$weight * (mod$lambda_AE - base_mod$lambda_AE)),
-      detect_AE = mean(mod$detect_AE - base_mod$detect_AE),
+      detect_AE = mean(mod$detect_AE - base_mod$detect_AE), # should update this to a int scheme
       DS_detect_prob = mod$DS_detect_prob - base_mod$DS_detect_prob,
       DS_avg_detect_prob = mod$DS_avg_prob - base_mod$DS_avg_prob
     )
