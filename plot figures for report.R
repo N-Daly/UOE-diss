@@ -84,9 +84,8 @@ source("mesh construction methods.R")
 
 ############# simulation results plots
 
-time_stamp <- format(Sys.time(), "%d-%m-%Y %H-%M")
 setwd("sim_results")
-r <- readRDS("09-08-2026 00-35 simulation results.rda")
+r <- readRDS("12-08-2026 17-30 simulation results.rda")
 # r <- readRDS("08-08-2026 compare dual HR priors simulation results.rda")
 setwd("..")
 r
@@ -98,7 +97,7 @@ rename  <- function(name){
   desired_col_names[i] 
 }
 
-r$model <- rename(r$model)
+# r$model <- rename(r$model)
 
 g <- ggplot(
   r, 
@@ -115,7 +114,9 @@ g <- ggplot(
     legend.title = element_text(size=rel(2)),
     axis.title.y  = element_text(size=rel(2)),
     plot.title = element_text(size=rel(2))
-  )
+  ) + 
+  guides(fill = guide_legend(title = "Choice of priors"))
+
 
 
     
@@ -151,31 +152,31 @@ ds_detect_prob <- g + geom_boxplot(aes(y=DS_detect_prob)) +
 
 ae_detect_prob <- g + geom_boxplot(aes(y=detect_AE)) +
   labs(
-    title = "Integrated  absolute error on median detection probability",
+    title = "Integrated Absolute error on median detection probability",
     y = "Differenced Absolute error"
   )
 
 h <- 11; w<- 9
-setwd("figs")
+# setwd("figs")
 ds_ll + coord_cartesian(ylim = c(NA, 5e05))
-# ggsave("results_DS_loglambda.pdf", height = h, width = w)
+ggsave("sens_ans_HR_DS_loglambda.pdf", height = h, width = w)
 
 se_ll
-# ggsave("results_SE_loglambda.pdf", height = h, width = w)
+ggsave("sens_ans_HR_SE_loglambda.pdf", height = h, width = w)
 
 ae_l + coord_cartesian(ylim = c(-2500, NA))
-# ggsave("results_AE_lambda.pdf", height = h, width = w)
+ggsave("sens_ans_HR_AE_lambda.pdf", height = h, width = w)
 
 # ds_avg_prob
-# ggsave("results_DS_avg_prob.pdf", height = h, width = w)
+# ggsave("sens_ans_HR_DS_avg_prob.pdf", height = h, width = w)
 
 # ds_detect_prob  + coord_cartesian(ylim = c(-3e05, 5e05))
-# ggsave("results_DS_detect_prob.pdf", height = h, width = w)
+# ggsave("sens_ans_HR_DS_detect_prob.pdf", height = h, width = w)
 
 ae_detect_prob
-ggsave("results_AE_detect_prob.pdf", height = h, width = w)
+ggsave("sens_ans_HR_AE_detect_prob.pdf", height = h, width = w)
 
-setwd("..")
+# setwd("..")
 
 
 no <- scale_fill_discrete(guide="none")

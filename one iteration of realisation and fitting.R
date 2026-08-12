@@ -3,19 +3,19 @@
 source("function Definitions.R")
 iteration_start <- proc.time()
 
-# simulate a ground truth
-# sim_info <- simulate_lcgp_dual_obs_HR_thinning(
-#   true_sigmaA = true_sigmaA, true_sigmaB = true_sigmaB,
-#   true_gammaA = true_gammaA, true_gammaB = true_gammaB,
-#   true_beta0 = -4,
-#   true_rho = true_range, true_sigma_GRF = true_sigma_grf
-# )
-sim_info <- simulate_lcgp_distance_thinning(
-  detect_func = hn, 
-  detect_func_paramA = true_sigmaA, detect_func_paramB = true_sigmaB,
+#  simulate a ground truth
+sim_info <- simulate_lcgp_dual_obs_HR_thinning(
+  true_sigmaA = true_sigmaA, true_sigmaB = true_sigmaB,
+  true_gammaA = true_gammaA, true_gammaB = true_gammaB,
   true_beta0 = -4,
   true_rho = true_range, true_sigma_GRF = true_sigma_grf
 )
+# sim_info <- simulate_lcgp_distance_thinning(
+#   detect_func = hn, 
+#   detect_func_paramA = true_sigmaA, detect_func_paramB = true_sigmaB,
+#   true_beta0 = -4,
+#   true_rho = true_range, true_sigma_GRF = true_sigma_grf
+# )
 
 lets_have_a_look_at_you(sim_info, detect_df = true_detect_prob_df)
 
@@ -53,7 +53,7 @@ plot_detect_pred(
   main = list_of_models$one_obs_hn$name
 )
 
-source("various dual hn fits.R")
+source("various gamma fits.R")
 # rm(fit); invisible(gc())
 # # # Model what A and B saw as a two observer likelihood with hn detection functions
 # catt("fitting two HN ")
@@ -144,26 +144,26 @@ source("various dual hn fits.R")
 # )
 
 
-rm(fit); invisible(gc())
-# Model what A and B saw as a combined observer with a spline(like) detection function
-catt("fitting spline")
-start <- proc.time()
-fit <- model_one_observer_spline(
-  observed_points, matern_prior, detect_matern, ips=ips, bru_verbose=how_verbose
-)
-end <- proc.time()
-print((end-start)[3])
-
-start <- proc.time()
-list_of_models$one_obs_spline <- get_preds_from_one_observer_spline_fit(fit)
-list_of_models$one_obs_spline$name <- "one_obs_spline"
-end <- proc.time()
-print((end-start)[3])
-
-plot_detect_pred(
-  pred_df = list_of_models$one_obs_spline$pred_detect,
-  main = list_of_models$one_obs_spline$name
-)
+# rm(fit); invisible(gc())
+# # Model what A and B saw as a combined observer with a spline(like) detection function
+# catt("fitting spline")
+# start <- proc.time()
+# fit <- model_one_observer_spline(
+#   observed_points, matern_prior, detect_matern, ips=ips, bru_verbose=how_verbose
+# )
+# end <- proc.time()
+# print((end-start)[3])
+# 
+# start <- proc.time()
+# list_of_models$one_obs_spline <- get_preds_from_one_observer_spline_fit(fit)
+# list_of_models$one_obs_spline$name <- "one_obs_spline"
+# end <- proc.time()
+# print((end-start)[3])
+# 
+# plot_detect_pred(
+#   pred_df = list_of_models$one_obs_spline$pred_detect,
+#   main = list_of_models$one_obs_spline$name
+# )
 
 
 rm(fit); invisible(gc())
