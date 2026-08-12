@@ -1,4 +1,4 @@
-rm(list=ls());while(dev.cur()>1){dev.off()};old_par<- par(no.readonly = T, pch=19);options(digits=3);invisible(gc())
+# rm(list=ls());while(dev.cur()>1){dev.off()};old_par<- par(no.readonly = T, pch=19);options(digits=3);invisible(gc())
 
 library(INLA)
 library(inlabru)
@@ -34,28 +34,78 @@ source("mesh construction methods.R")
 #     )
 # 
 # ggsave("modelMesh.pdf", height = 10, width = 20)
+
+######### mesh construction plots
+
+# base <- ggplot() +
+#   gg(mexdolphin_sf$ppoly, col = "red", alpha= .2) +
+#   theme(
+#     plot.title=element_text(size=rel(2),face="bold"),
+#     axis.title = element_blank()
+#   )
+# 
+# # demonstrate mesh construction method 1 - spatially varying edge lengths
+# mm <- make_spatially_varying_mesh(10)
+# 
+# base + gg(mm) +
+#   ggtitle("A mesh with spatially varying edge lengths")
+# 
+# setwd("figs")
+# ggsave("meshConstructionMethod1.pdf", height = 15 ,width = 20)
+# setwd("..")
+# 
+# # demonstrate mesh construction method 2 - line transect contained within edges
+# nonoverlapping <- get_nonoverlapping_samplers()
+# mm <- make_spatially_varying_mesh2(param=0, nonoverlapping_line_transects = nonoverlapping)
+# 
+# base + gg(mm) +
+#   ggtitle("A mesh composed of line transects and a hexagonal lattice")
+# 
+# setwd("figs")
+# ggsave("meshConstructionMethod2.pdf", height = 15 ,width = 20)
+# setwd("..")
 # 
 # 
 # # demonstrate mesh construct method 3 -  the two hexagonal lattices
-# mm <- make_spatially_varying_mesh3(5)
+# mm <- make_spatially_varying_mesh3(5, coarse = 20)
 # 
-# ggplot() + gg(mm) + 
-#   ggtitle("A mesh composed of fine and coarse hexagonal lattices") + 
+# ggplot() + gg(mm) +
+#   ggtitle("A mesh composed of fine and coarse hexagonal lattices") +
+#   gg(mexdolphin_sf$ppoly, col = "red", alpha= .2) +
 #   theme(
-#     plot.title=element_text(size=rel(2),face="bold")
-#   ) +
-#   gg(mexdolphin_sf$ppoly, col = "red", alpha= .2)
+#     plot.title=element_text(size=rel(2),face="bold"),
+#     axis.title = element_blank()
+#   )
 # 
+# setwd("figs")
 # ggsave("meshConstructionMethod3.pdf", height = 15 ,width = 20)
+# setwd("..")
 
+
+############# simulation results plots
 
 time_stamp <- format(Sys.time(), "%d-%m-%Y %H-%M")
 setwd("sim_results")
 r <- readRDS("09-08-2026 00-35 simulation results.rda")
+# r <- readRDS("08-08-2026 compare dual HR priors simulation results.rda")
 setwd("..")
 r
 
-g <- ggplot(r, aes(fill=model)) +
+desired_col_order <- c("two_obs_hn", "one_obs_HR", "one_obs_spline" ,  "two_obs_HR")
+desired_col_names <- c("Dual HN", "HR", "Spline", "Dual HR")
+rename  <- function(name){ 
+  i <- match(name, desired_col_order)
+  desired_col_names[i] 
+}
+
+r$model <- rename(r$model)
+
+g <- ggplot(
+  r, 
+  aes(
+    fill=model
+    )
+  ) +
   expand_limits(y=0) +
   geom_abline(intercept = 0, slope = 0, colour="red", linewidth=2) +
   theme(
@@ -64,30 +114,26 @@ g <- ggplot(r, aes(fill=model)) +
     legend.text = element_text(size=rel(2)),
     legend.title = element_text(size=rel(2)),
     axis.title.y  = element_text(size=rel(2)),
-    plot.title = element_text(size=rel(2))#,
-    # plot.margin=grid::unit(c(0,0,0,0), "mm")
-    ) + 
-   scale_fill_discrete(
-    name="Model",
-    breaks=c("one_obs_HR", "one_obs_spline" , "two_obs_hn", "two_obs_HR"),
-    labels=c("HR", "Spline", "Dual HN", "Dual HR")
+    plot.title = element_text(size=rel(2))
   )
+
+
     
 ds_ll <- g + geom_boxplot(aes(y=DS_loglambda)) +
   labs(
-    title="Integrated Dawid-Sebastiani score on log lambda",
+    title="Integrated Dawid-Sebastiani score on log intensity",
     y = "Differenced Dawid-Sebastiani score"
   ) 
 
 se_ll <- g + geom_boxplot(aes(y=loglambda_SE)) + 
   labs(
-    title="Integrated Squared Error on mean log lambda",
+    title="Integrated Squared Error on mean log intensity",
     y = "Differenced Squared Error score"
   )
 
 ae_l <- g + geom_boxplot(aes(y=lambda_AE)) + 
   labs(
-    title = "Integrated Absolute Error on median lambda",
+    title = "Integrated Absolute Error on median intensity",
     y = "Differenced Absolute Error score"  
   )
 
@@ -103,22 +149,33 @@ ds_detect_prob <- g + geom_boxplot(aes(y=DS_detect_prob)) +
     y = "Differenced Dawid-Sebastiani score"
   )
 
+ae_detect_prob <- g + geom_boxplot(aes(y=detect_AE)) +
+  labs(
+    title = "Integrated  absolute error on median detection probability",
+    y = "Differenced Absolute error"
+  )
 
 h <- 11; w<- 9
+setwd("figs")
 ds_ll + coord_cartesian(ylim = c(NA, 5e05))
-# ggsave(paste(time_stamp, "results_DS_loglambda.pdf"), height = h, width = w)
+# ggsave("results_DS_loglambda.pdf", height = h, width = w)
 
 se_ll
-# ggsave(paste(time_stamp, "results_SE_loglambda.pdf"), height = h, width = w)
+# ggsave("results_SE_loglambda.pdf", height = h, width = w)
 
 ae_l + coord_cartesian(ylim = c(-2500, NA))
-# ggsave(paste(time_stamp, "results_AE_lambda.pdf"), height = h, width = w)
+# ggsave("results_AE_lambda.pdf", height = h, width = w)
 
-ds_avg_prob
-# ggsave(paste(time_stamp, "results_DS_avg_prob.pdf"), height = h, width = w)
+# ds_avg_prob
+# ggsave("results_DS_avg_prob.pdf", height = h, width = w)
 
-ds_detect_prob  + coord_cartesian(ylim = c(-3e05, 5e05))
-# ggsave(paste(time_stamp, "results_DS_detect_prob.pdf"), height = h, width = w)
+# ds_detect_prob  + coord_cartesian(ylim = c(-3e05, 5e05))
+# ggsave("results_DS_detect_prob.pdf", height = h, width = w)
+
+ae_detect_prob
+ggsave("results_AE_detect_prob.pdf", height = h, width = w)
+
+setwd("..")
 
 
 no <- scale_fill_discrete(guide="none")
