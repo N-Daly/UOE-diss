@@ -8,6 +8,7 @@ library(ggplot2)
 library(patchwork)
 library(dplyr)
 library(ggspatial)
+library(latex2exp)
 
 
 my_dir <- r"(C:\Users\ND\OneDrive - University of Edinburgh\Dissertation\UOE-diss)"
@@ -85,19 +86,18 @@ source("mesh construction methods.R")
 ############# simulation results plots
 
 setwd("sim_results")
-r <- readRDS("12-08-2026 17-30 simulation results.rda")
-# r <- readRDS("08-08-2026 compare dual HR priors simulation results.rda")
+r <- readRDS("09-08-2026 00-35 30simulation results.rda")
 setwd("..")
 r
 
-desired_col_order <- c("two_obs_hn", "one_obs_HR", "one_obs_spline" ,  "two_obs_HR")
-desired_col_names <- c("Dual HN", "HR", "Spline", "Dual HR")
-rename  <- function(name){ 
-  i <- match(name, desired_col_order)
-  desired_col_names[i] 
+old_models <- c("two_obs_hn", "one_obs_HR", "one_obs_spline" ,  "two_obs_HR")
+new_models <- c("Dual HN", "HR", "Spline", "Dual HR")
+rename  <- function(name, old_names, new_names){ 
+  i <- match(name, old_names)
+  new_names[i] 
 }
 
-# r$model <- rename(r$model)
+r$model <- rename(r$model, old_models, new_models)
 
 g <- ggplot(
   r, 
@@ -114,11 +114,7 @@ g <- ggplot(
     legend.title = element_text(size=rel(2)),
     axis.title.y  = element_text(size=rel(2)),
     plot.title = element_text(size=rel(2))
-  ) + 
-  guides(fill = guide_legend(title = "Choice of priors"))
-
-
-
+  ) 
     
 ds_ll <- g + geom_boxplot(aes(y=DS_loglambda)) +
   labs(
@@ -156,31 +152,59 @@ ae_detect_prob <- g + geom_boxplot(aes(y=detect_AE)) +
     y = "Differenced Absolute error"
   )
 
-h <- 11; w<- 9
-# setwd("figs")
-ds_ll + coord_cartesian(ylim = c(NA, 5e05))
-ggsave("sens_ans_HR_DS_loglambda.pdf", height = h, width = w)
+h <- 9; w<- 9
+setwd("figs")
+ds_ll #  + coord_cartesian(ylim = c(NA, 5e05))
+ggsave("results_DS_loglambda.pdf", height = h, width = w)
 
 se_ll
-ggsave("sens_ans_HR_SE_loglambda.pdf", height = h, width = w)
+ggsave("results_SE_loglambda.pdf", height = h, width = w)
 
-ae_l + coord_cartesian(ylim = c(-2500, NA))
-ggsave("sens_ans_HR_AE_lambda.pdf", height = h, width = w)
+ae_l #+ coord_cartesian(ylim = c(-2500, NA))
+ggsave("results_AE_lambda.pdf", height = h, width = w)
 
 # ds_avg_prob
-# ggsave("sens_ans_HR_DS_avg_prob.pdf", height = h, width = w)
+# ggsave("results_DS_avg_prob.pdf", height = h, width = w)
 
 # ds_detect_prob  + coord_cartesian(ylim = c(-3e05, 5e05))
-# ggsave("sens_ans_HR_DS_detect_prob.pdf", height = h, width = w)
+# ggsave("results_DS_detect_prob.pdf", height = h, width = w)
 
 ae_detect_prob
-ggsave("sens_ans_HR_AE_detect_prob.pdf", height = h, width = w)
+ggsave("results_AE_detect_prob.pdf", height = h, width = w)
 
-# setwd("..")
+setwd("..")
 
 
 no <- scale_fill_discrete(guide="none")
 
 ((ds_ll + no)+(se_ll+no))/((ae_l+no)+(ds_detect_prob+no))
 
-theme
+########## artifacts from plotting dual HR sensitivity analysis
+# setwd("sim_results")
+# r <- readRDS("12-08-2026 17-30 dual HR sens ans.rda.rda")
+# setwd("..")
+
+# old_hr_priors <- c(
+#   "Gamma Gamma(2,1) Sigma Exp(1/8)",
+#   "Gamma Gamma(2,1) Sigma Exp(1/2)" ,         
+#   "Gamma Unif(0.01, 10) Sigma Exp(1/2)" ,
+#   "Gamma Unif(0.01, 10) Sigma Exp(1/8)" ,     
+#   "Gamma Unif(0.01, 10) Sigma Unif(0.001, 15)",
+#   "Gamma Gamma(2,1) Sigma Gamma(4, 1)"
+# )
+# 
+# new_hr_priors <- c(
+#   "Gamma(2,1), Exp(1/8)" ,
+#   "Gamma(2,1), Exp(1/2)" ,         
+#   "Unif(0.01, 10), Exp(1/2)"   ,
+#   "Unif(0.01, 10), Exp(1/8)"  ,     
+#   "Unif(0.01, 10), Unif(0.001, 15)",
+#   "Gamma(2,1), Gamma(4, 1)"
+# )
+# 
+# r$model <- rename(r$model, old_hr_priors, new_hr_priors)
+# 
+# guides(fill = guide_legend(title = TeX("Choice of priors for $\\gamma$ and $\\sigma$"))) 
+
+
+
