@@ -1,15 +1,15 @@
 rm(list=ls());while(dev.cur()>1){dev.off()};old_par<- par(no.readonly = T, pch=19);options(digits=3);invisible(gc())
 
+my_dir <- r"(C:\Users\ND\OneDrive - University of Edinburgh\Dissertation\UOE-diss)"
+setwd(my_dir)
 source("function Definitions.R")
 library(reshape2)
 library(ggplot2)
 
 dd <- seq(0, 8, length.out=1000)
 
-# pa <- hr(dd, 1.75, 1)
-# pb <- hr(dd, 2, 4)
-pa <- hn(dd, 2)
-pb <- hn(dd, 4)
+pa <- hr(dd, 1.75, 1)
+pb <- hr(dd, 2, 4)
 pany <- 1 - (1-pa)*(1-pb)
 
 par(cex=1)
