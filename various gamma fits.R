@@ -16,7 +16,7 @@ different_configs <- list(
     sigma_prior = bm_marginal(qexp, pexp, dexp, rate = 1/2),
     bru_inits = list(
       gammaA = qnorm(pgamma(2, shape=2, rate=1)),
-      gammaB = qnorm(pgamma(3, shape=2, rate=1)),
+      gammaB = qnorm(pgamma(2, shape=2, rate=1)),
       sigmaA = qnorm(pexp(2, rate = 1/2)),
       sigmaB = qnorm(pexp(2, rate = 1/2))
     )
@@ -27,7 +27,7 @@ different_configs <- list(
     sigma_prior = bm_marginal(qexp, pexp, dexp, rate = 1/2),
     bru_inits = list(
       gammaA = qnorm(punif(2, min = 0.01, max = 10)),
-      gammaB = qnorm(punif(3, min = 0.01, max = 10)),
+      gammaB = qnorm(punif(2, min = 0.01, max = 10)),
       sigmaA = qnorm(pexp(2, rate = 1/2)),
       sigmaB = qnorm(pexp(2, rate = 1/2))
     )
@@ -38,9 +38,31 @@ different_configs <- list(
     sigma_prior = bm_marginal(qexp, pexp, dexp, rate = 1/8),
     bru_inits = list(
       gammaA = qnorm(punif(2, min = 0.01, max = 10)),
-      gammaB = qnorm(punif(3, min = 0.01, max = 10)),
+      gammaB = qnorm(punif(2, min = 0.01, max = 10)),
       sigmaA = qnorm(pexp(2, rate = 1/8)),
       sigmaB = qnorm(pexp(2, rate = 1/8))
+    )
+  ),
+  list(
+    name = "Gamma Unif(0.01, 10) Sigma Unif(0.001, 15)",
+    gamma_prior = bm_marginal(qunif, punif, dunif, min = 0.01, max = 10),
+    sigma_prior = bm_marginal(qunif, punif, dunif, min = 0.01, max = 15),
+    bru_inits = list(
+      gammaA = qnorm(punif(2, min = 0.01, max = 10)),
+      gammaB = qnorm(punif(2, min = 0.01, max = 10)),
+      sigmaA = qnorm(punif(3, min = 0.01, max = 15)),
+      sigmaB = qnorm(punif(3, min = 0.01, max = 15))
+    )
+  ),
+  list(
+    name = "Gamma Gamma(2,1) Sigma Gamma(4, 1)",
+    gamma_prior = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
+    sigma_prior = bm_marginal(qexp, pexp, dexp, rate = 1/2),
+    bru_inits = list(
+      gammaA = qnorm(pgamma(2, shape=2, rate=1)),
+      gammaB = qnorm(pgamma(2, shape=2, rate=1)),
+      sigmaA = qnorm(pgamma(2, shape=4, rate=1)),
+      sigmaB = qnorm(pgamma(2, shape=4, rate=1))
     )
   )
 )
