@@ -18,7 +18,7 @@ source("mesh construction methods.R")
 ########### state the ground truth
 
 true_sigmaA <- 1.75; true_sigmaB <- 2; true_gammaA <- 1; true_gammaB <- 4
-true_range <- 500; true_sigma_grf <- 1
+true_range <- 250; true_sigma_grf <- 1
 
 # work out the different probabilities of detection
 distance_ips <- fm_int(list(distance = fm_mesh_1d(seq(0,8, length.out=250))))
@@ -70,12 +70,17 @@ detect_matern <- inla.spde2.pcmatern(
   )
 )
 
+# all models predict on the locations of this integration scheme, with which they are scored.
+# and the scores are integrated using the integration scheme weights
+pred_loc_ips <- fm_int(
+  list(geometry = fm_subdivide(mexdolphin_sf$mesh)),
+  samplers=mexdolphin_sf$ppoly
+)
 proj_from_DGP_mesh_to_intensity_pred_locs <- fm_evaluator(
   mesh = mexdolphin_sf$mesh, 
-  # all models predict on the locations of this integration scheme, with which they are scored.
-  # and the scores are integrated using the integration scheme weights
-  loc = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly)$geometry
+   loc = pred_loc_ips$geometry
 )
+
 # for model scoring later
 true_detect_prob <- pany
 
@@ -84,7 +89,7 @@ true_detect_prob <- pany
 
 
 # set.seed(800)
-# how_verbose = 1
+# how_verbose = 0
 # # source("one iteration of gamma fits.R")
 # source("one iteration of realisation and fitting.R")
 # some_results
@@ -96,7 +101,7 @@ how_verbose <- 0
 sim_seed <- 1234 - 1
 
 # for saving the results
-file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "simulation results.rda")
+file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "spatrange250 simulation results.rda")
 
 for (i in 1:nsims){
   sim_seed <- sim_seed +1

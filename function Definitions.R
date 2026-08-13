@@ -163,7 +163,7 @@ get_scoring_differences <- function(
     true_detect,
     true_loglambda,
     distance_ips,
-    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
+    ips_for_pred,
     half_width = 8
 ){
   base_mod <- models[[1]] # should always be the one observer hn
@@ -282,12 +282,36 @@ pretty_print_seconds <- function(secs){
   txt
 }
 
+plot_loglambda_preds <- function(pred_df, true_vals, main = ""){
+  
+  mu <- pred_df$mean
+  sigma <- pred_df$sd
+  
+  par(mfrow=c(1,2))
+  plot(
+    true_vals, mu,
+    xlab = "True log intensity",
+    ylab = "posterior mean",
+    xlim = range(true_vals, mu),
+    ylim = range(true_vals, mu),
+    main = main
+  )
+  abline(a=0, b=1)
+  plot(
+    true_vals, sigma,
+    xlab = "True log intensity",
+    ylab = "posterior sd",
+    ylim = range(0, sigma),
+    main = main
+  )
+  par(mfrow=c(1,1))
+}
 
 ############ examine LGCP simulation realisation
 lets_have_a_look_at_you <- function(
     sim,
     detect_df,
-    approx_intensity_range = c(0, 0.225) # so all plots have the same colour scale
+    approx_intensity_range = c(-6, -3) # so all plots have the same colour scale
 ){
   
   all_pts <- sim$unthinned_samples_df
@@ -316,30 +340,29 @@ lets_have_a_look_at_you <- function(
   
 
   ########## plot lambda
-  pxls <- fm_pixels(sim_info$the_mesh, mask = sim_info$boundary, dims = c(200, 200))
+  pxls <- fm_pixels(sim_info$the_mesh, mask = sim_info$boundary, dims = rep(500, 2))
   
   pxls$loglambda <- fm_evaluate(sim_info$the_mesh, loc= pxls, field=sim_info$log_lambda )
-  pxls$lambda <- exp(pxls$loglambda)
-  
+
   intensity_plot <- ggplot() +
     gg(sim_info$boundary, alpha= .1) +
     geom_tile(
       data = pxls,
-      aes(geometry = geometry, fill = lambda),
+      aes(geometry = geometry, fill = loglambda),
       stat = "sf_coordinates"  
     ) +
     geom_sf(data = sim_info$boundary, alpha = 0.1) +
-    labs(title = "True underlying animal density or intensity") +
+    labs(title = "True underlying log intensity") +
     scale_fill_continuous(
       name = "Density",
-      limits = range(approx_intensity_range, pxls$lambda)
+      limits = range(approx_intensity_range, pxls$loglambda)
       ) + 
     theme( 
-      axis.title.x = element_blank(),
-      axis.title.y = element_blank()
+      axis.title = element_blank(),
     ) 
   
-  print(intensity_plot/ animal_plot / obs_animal_plot)
+  print(intensity_plot + ggspatial::annotation_scale())
+  # print(intensity_plot/ animal_plot / obs_animal_plot)
   
   ##########  histogram of observed distances, per observer and all animals' distances
   
@@ -472,7 +495,7 @@ lets_have_a_look_at_you <- function(
     ) + 
     labs(title= "Observed distances by Observer B marginally")
   
-  print(  detect_states_plot | (detect_A_plot/detect_B_plot) )
+  # print(  detect_states_plot | (detect_A_plot/detect_B_plot) )
 }
 
 

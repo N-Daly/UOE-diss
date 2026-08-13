@@ -42,7 +42,7 @@ model_one_observer_hn <- function(
 
 get_preds_from_one_observer_hn_fit <- function(
     fit,
-    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
+    ips_for_pred = pred_loc_ips,
     desired = c("detect", "lambda", "avg_prob"),
     dists_ips_for_pred = distance_ips,
     m = 750, # MC samples
@@ -122,7 +122,7 @@ model_one_observer_spline <- function(
 
 get_preds_from_one_observer_spline_fit <- function(
     fit,
-    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
+    ips_for_pred = pred_loc_ips,
     desired = c("detect", "lambda", "avg_prob"),
     dists_ips_for_pred = distance_ips,
     m = 750, # MC samples
@@ -231,7 +231,7 @@ model_two_observers_hn <- function(
 
 get_preds_from_two_observers_hn_fit <- function(
     fit,
-    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
+    ips_for_pred = pred_loc_ips,
     desired = c("detect", "lambda", "avg_prob"),
     dists_ips_for_pred = distance_ips,
     m = 750, # MC samples
@@ -358,7 +358,7 @@ model_one_observer_hr <- function(
 
 get_preds_from_one_observer_hr_fit <- function(
     fit,
-    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
+    ips_for_pred = pred_loc_ips,
     fixed_gamma_val = NULL, # if NULL, gamma is assumed to be a r.v
     desired = c("detect", "lambda", "avg_prob"),
     dists_ips_for_pred = distance_ips,
@@ -525,7 +525,7 @@ model_two_observers_hr <- function(
 
 get_preds_from_two_observers_hr_fit <- function(
     fit,
-    ips_for_pred = fm_int(list(geometry = mexdolphin_sf$mesh), samplers=mexdolphin_sf$ppoly),
+    ips_for_pred = pred_loc_ips,
     fixed_gamma_val = NULL, # if NULL, gamma is assumed to be a r.v
     desired = c("detect", "lambda", "avg_prob"),
     dists_ips_for_pred = distance_ips,
