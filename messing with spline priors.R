@@ -5,7 +5,10 @@ library(inlabru)
 library(sf)
 library(fmesher)
 library(ggplot2)
+library(latex2exp)
 
+my_dir <- r"(C:\Users\ND\OneDrive - University of Edinburgh\Dissertation\UOE-diss)"
+setwd(my_dir)
 source("function Definitions.R")
 
 dists_grid <- seq(0,8, length.out=1000)
@@ -18,7 +21,6 @@ mesh <- fm_mesh_1d(
 projector <- fm_evaluator(mesh, loc=dists_grid)
 
 
-#not sure what good this is without accounting for the neumann condition
 plot_the_variance <- function(
     the_mesh=mesh, distance=dists_grid,
     alpha, rho, sigma
@@ -30,21 +32,24 @@ plot_the_variance <- function(
   
   Sigma <- diag( fm_covariance(Q, basis) )
   
-  title = "Marginal variance of the Spline"
-  subtitle = paste(
-    " alpha =",alpha,
-   "rho =", rho,
-   "sigma = ", sigma
-  )
+  title <- "Marginal variance of the Spline"
+  subtitle <- TeX(paste(
+    "$\\alpha$ =", alpha,
+    "$\\rho$ =", rho,
+    "$\\sigma$ = ", sigma
+  ))
+  
   plot(
     distance, Sigma,
     # ylim=0:1,
     type="l",
     main = title
   )
-  mtext(subtitle)
+  mtext(subtitle, cex = 1.5)
 }
-plot_the_variance(alpha=2,rho=1,sigma=1)
+
+#not sure what good this is without accounting for the neumann condition
+# plot_the_variance(alpha=2,rho=1,sigma=1)
 
 
 sample_many_detect_priors <- function(
@@ -71,6 +76,7 @@ sample_many_detect_priors <- function(
   detect_values <- spline_detect_func(spline_values)
 
   df <- data.frame(
+    spline = c(spline_values),
     prob = c(detect_values),
     dist = rep(distances, times = ncol(detect_values)),
     sim = rep(1:nsims, each = nrow(detect_values))
@@ -78,91 +84,20 @@ sample_many_detect_priors <- function(
   df
 }
 
-rho <- 3; sigma <- 0.5
+rho <- 3; sigma <- 0.75
 ss <- sample_many_detect_priors(rho=rho, sigma = sigma, nsims=200)
 
-title <- paste(
-  "Realisations of spline detect function with rho =",
+title <- TeX(paste(
+  "Realisations of spline detection function with $\\alpha = 2, \\rho =$",
   rho,
-  "and sigma =",
+  "and $\\sigma =$",
   sigma
-)
-(g <- ggplot(ss, aes(dist,prob, group=sim))  + 
+))
+(g <- ggplot(ss, aes(dist,prob, group=sim)) + 
   geom_line(alpha=.4) +
   expand_limits(y=0:1) + 
-  ylim( 0, min(10, max(ss$prob)) )  +
-  labs(title = title)
+  ylim( 0, min(6, max(ss$prob)) )  +
+  labs(title = title) +
+  # geom_line(data=data.frame(prob=1, dist = dists_grid, sim=-1), colour= "red")+
+    geom_hline(yintercept= 1, linewidth = 2, colour = "red")
 )
-
-
-
-
-
-
-##############
-# some data
-
-hn <- function(distance, sigma){  exp(-0.5 * (distance/sigma)^2 )  }
-
-dists <- seq(0, 8, length.out=1000)
-
-set.seed(123)
-toy_data <- sample(dists, 100, replace=T)
-
-sigmaA <- 2; sigmaB <- 4
-
-pA <- hn(toy_data, sigmaA); pB <- hn(toy_data, sigmaB)
-# detected
-ii <- (runif(length(toy_data)) <= pA) | (runif(length(toy_data)) <= pB)
-toy_data <- data.frame(distance = toy_data[ii])
-
-
-############# bru model
-dof <- fm_dof(mesh)
-detect_spde <- inla.spde2.pcmatern(
-  mesh,
-  prior.range = c(rho, 0.9), # P(rho < val) = p0
-  prior.sigma = c(sigma, 0.2), # P(sigma > val) = p0
-  extraconstr = list(
-    A=matrix(c(1, rep(0, dof-1) ), 1, dof),
-    e = matrix(0, 1, 1)
-  )
-)
-
-cmp <- ~ spline_effect(main=distance, model=detect_spde) +
-  Intercept(1)
-
-form <- distance ~ -spline_effect + Intercept
-
-fit <- lgcp(
-  components = cmp,
-  formula = form,
-  data = toy_data,
-  domain = list(distance=fm_mesh_1d( 0:8 )),
-  options = list(bru_verbose=1)
-)
-
-
-dp <- predict(
-  fit,
-  data.frame(distance=dists),
-  formula = ~ exp(-spline_effect)
-)
-
-
-plot(
-  dists, 
-  dp$mean,
-  type = "l",
-  lwd = 2,
-  ylim = range(0,dp$q0.975)
-)
-lines(dists, dp$q0.975)
-lines(dists, dp$q0.025)
-
-# plot(dists, -log(dp$mean))
-
-
-
-
-

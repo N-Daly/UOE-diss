@@ -18,7 +18,7 @@ source("observer models.R")
 source("function Definitions.R")
 source("mesh construction methods.R")
 
-# this is the one used for the model's spatial effects
+######### plot the mesh used for the model's spatial effects
 if (FALSE){
 mesh <- make_spatially_varying_mesh3(60, coarse=60)
 

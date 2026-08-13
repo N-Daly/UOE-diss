@@ -48,7 +48,7 @@ ips_with_detection_states <- readRDS("ips_with_detect make_spatially_varying_mes
 
 matern_prior <- inla.spde2.pcmatern(
   mesh,
-  prior.range = c(600, 0.1), # true rho is 500
+  prior.range = c(500, 0.1), # true rho is 250
   prior.sigma = c(.5, 0.5)   # true sigma is 1
 )
 
@@ -58,12 +58,12 @@ detect_mesh <- fm_mesh_1d(
   degree = 2
 )
 
-# alpha=2; rho=2; sigma=1.5
+# alpha=2; rho <- 3; sigma <- 0.75
 detect_matern <- inla.spde2.pcmatern(
   detect_mesh,
   alpha = 2,
-  prior.range = c(2, 0.8), # P(rho < val) = alpha
-  prior.sigma = c(2, 0.01), # P(sigma > val) = alpha
+  prior.range = c(3, 0.9), # P(rho < val) = alpha
+  prior.sigma = c(.75, 0.1), # P(sigma > val) = alpha
   extraconstr = list(
     A=matrix(c(1,0,0,0,0), 1, 5),
     e = matrix(0,1,1)
@@ -95,13 +95,13 @@ true_detect_prob <- pany
 # some_results
 
 ############ Repeated simulations
-nsims <- 15
+nsims <- 30
 results <- NULL
 how_verbose <- 0
 sim_seed <- 1234 - 1
 
 # for saving the results
-file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "spatrange250 simulation results.rda")
+file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "spatrange250 new spline simulation results.rda")
 
 for (i in 1:nsims){
   sim_seed <- sim_seed +1
@@ -121,25 +121,3 @@ for (i in 1:nsims){
   setwd(my_dir)
   print(some_results)
 }
-
-
-# # plot the difference in scores, a difference of zero implies the models perform the same wrt to that score
-# # all scores are negatively orientated so a positive difference means the simpler merged observer model
-# # performed worse
-# 
-# g <- ggplot(results, aes(fill=model)) +
-#   expand_limits(y=0) +
-#   geom_abline(intercept = 0, slope = 0, colour="red", linewidth=2) +
-#   theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
-# ds_ll <-g + geom_boxplot(aes(y=DS_loglambda)) + labs(title="integrated DS on log lambda")
-# msep <- g + geom_boxplot(aes(y=loglambda_SE)) + labs(title="integrated SE on mean log lambda")
-# maep <- g + geom_boxplot(aes(y=lambda_AE)) + labs(title = "integrated AE on median lambda")
-# maedetectp <- g + geom_boxplot(aes(y=detect_AE)) + labs(title="mean AE on detection prob")
-# ds_detect <- g + geom_boxplot(aes(y=DS_detect_prob)) + labs(title="integrated DS on detection prob")
-# ds_avg_prob <- g + geom_boxplot(aes(y=DS_avg_prob_detect)) + labs(title=" DS on avg prob detect")
-# 
-# ds_ll
-# msep
-# maep
-# maedetectp
-# ds_detect
