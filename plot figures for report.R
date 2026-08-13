@@ -18,75 +18,90 @@ source("observer models.R")
 source("function Definitions.R")
 source("mesh construction methods.R")
 
-# # this is the one used for the model's spatial effects
-# mesh <- make_spatially_varying_mesh3(60, coarse=60)
-# 
-# tran_segm <- st_buffer(mexdolphin_sf$samplers, 8, endCapStyle = "FLAT")
-# 
-# ggplot() +
-#   gg(mesh, edge.color = "black") + 
-#   gg(tran_segm, alpha = .1, colour = "blue") + 
-#   gg(mexdolphin_sf$ppoly, alpha = 0.2,  color="red") +
-#   ggspatial::annotation_scale(data=mexdolphin_sf$ppoly) +
-#   ggtitle("Mesh of the study region") + 
-#   theme(
-#     plot.title=element_text(size=rel(2),face="bold"),
-#     plot.margin=grid::unit(c(0,0,0,0), "mm")
-#     )
-# 
-# ggsave("modelMesh.pdf", height = 10, width = 20)
+# this is the one used for the model's spatial effects
+if (FALSE){
+mesh <- make_spatially_varying_mesh3(60, coarse=60)
 
+tran_segm <- st_buffer(mexdolphin_sf$samplers, 8, endCapStyle = "FLAT")
+
+(ggplot() +
+  gg(
+    mesh,
+    edge.color = "black"
+  ) +
+  gg(
+    tran_segm,
+    alpha = .1,
+    colour = "blue"
+  ) +
+  gg(
+    mexdolphin_sf$ppoly,
+    alpha = 0.2,
+    color="red"
+  ) +
+  ggtitle("Mesh of the study region") +
+  theme(
+    plot.title=element_text(size=rel(2),face="bold"),
+    axis.title = element_blank()
+    )
+)
+setwd("figs")
+ggsave("modelMesh.pdf", height = 10, width = 20)
+setwd("..")
+}
 ######### mesh construction plots
 
-# base <- ggplot() +
-#   gg(mexdolphin_sf$ppoly, col = "red", alpha= .2) +
-#   theme(
-#     plot.title=element_text(size=rel(2),face="bold"),
-#     axis.title = element_blank()
-#   )
-# 
-# # demonstrate mesh construction method 1 - spatially varying edge lengths
-# mm <- make_spatially_varying_mesh(10)
-# 
-# base + gg(mm) +
-#   ggtitle("A mesh with spatially varying edge lengths")
-# 
-# setwd("figs")
-# ggsave("meshConstructionMethod1.pdf", height = 15 ,width = 20)
-# setwd("..")
-# 
-# # demonstrate mesh construction method 2 - line transect contained within edges
-# nonoverlapping <- get_nonoverlapping_samplers()
-# mm <- make_spatially_varying_mesh2(param=0, nonoverlapping_line_transects = nonoverlapping)
-# 
-# base + gg(mm) +
-#   ggtitle("A mesh composed of line transects and a hexagonal lattice")
-# 
-# setwd("figs")
-# ggsave("meshConstructionMethod2.pdf", height = 15 ,width = 20)
-# setwd("..")
-# 
-# 
-# # demonstrate mesh construct method 3 -  the two hexagonal lattices
-# mm <- make_spatially_varying_mesh3(5, coarse = 20)
-# 
-# ggplot() + gg(mm) +
-#   ggtitle("A mesh composed of fine and coarse hexagonal lattices") +
-#   gg(mexdolphin_sf$ppoly, col = "red", alpha= .2) +
-#   theme(
-#     plot.title=element_text(size=rel(2),face="bold"),
-#     axis.title = element_blank()
-#   )
-# 
-# setwd("figs")
-# ggsave("meshConstructionMethod3.pdf", height = 15 ,width = 20)
-# setwd("..")
+if(FALSE){
+base <- ggplot() +
+  gg(mexdolphin_sf$ppoly, col = "red", alpha= .2) +
+  theme(
+    plot.title=element_text(size=rel(2),face="bold"),
+    axis.title = element_blank()
+  )
 
+# demonstrate mesh construction method 1 - spatially varying edge lengths
+mm <- make_spatially_varying_mesh(10)
+
+base + gg(mm) +
+  ggtitle("A mesh with spatially varying edge lengths")
+
+setwd("figs")
+ggsave("meshConstructionMethod1.pdf", height = 15 ,width = 20)
+setwd("..")
+
+# demonstrate mesh construction method 2 - line transect contained within edges
+nonoverlapping <- get_nonoverlapping_samplers()
+mm <- make_spatially_varying_mesh2(param=0, nonoverlapping_line_transects = nonoverlapping)
+
+base + gg(mm) +
+  ggtitle("A mesh composed of line transects and a hexagonal lattice")
+
+setwd("figs")
+ggsave("meshConstructionMethod2.pdf", height = 15 ,width = 20)
+setwd("..")
+
+
+# demonstrate mesh construct method 3 -  the two hexagonal lattices
+mm <- make_spatially_varying_mesh3(5, coarse = 20)
+
+ggplot() + gg(mm) +
+  ggtitle("A mesh composed of fine and coarse hexagonal lattices") +
+  gg(mexdolphin_sf$ppoly, col = "red", alpha= .2) +
+  theme(
+    plot.title=element_text(size=rel(2),face="bold"),
+    axis.title = element_blank()
+  )
+
+setwd("figs")
+ggsave("meshConstructionMethod3.pdf", height = 15 ,width = 20)
+setwd("..")
+}
 
 ############# simulation results plots
 
 setwd("sim_results")
-r <- readRDS("09-08-2026 00-35 30simulation results.rda")
+# r <- readRDS("09-08-2026 00-35 30simulation results.rda")
+r <- readRDS("13-08-2026 11-18 spatrange250 simulation results.rda")
 setwd("..")
 r
 
@@ -97,7 +112,7 @@ rename  <- function(name, old_names, new_names){
   new_names[i] 
 }
 
-r$model <- rename(r$model, old_models, new_models)
+r$model <- rename(r$model, c(old_models, "spline"), c(new_models, "Spline"))
 
 g <- ggplot(
   r, 
@@ -155,13 +170,13 @@ ae_detect_prob <- g + geom_boxplot(aes(y=detect_AE)) +
 h <- 9; w<- 9
 setwd("figs")
 ds_ll #  + coord_cartesian(ylim = c(NA, 5e05))
-ggsave("results_DS_loglambda.pdf", height = h, width = w)
+# ggsave("results_DS_loglambda.pdf", height = h, width = w)
 
 se_ll
-ggsave("results_SE_loglambda.pdf", height = h, width = w)
+# ggsave("results_SE_loglambda.pdf", height = h, width = w)
 
 ae_l #+ coord_cartesian(ylim = c(-2500, NA))
-ggsave("results_AE_lambda.pdf", height = h, width = w)
+# ggsave("results_AE_lambda.pdf", height = h, width = w)
 
 # ds_avg_prob
 # ggsave("results_DS_avg_prob.pdf", height = h, width = w)
@@ -170,7 +185,7 @@ ggsave("results_AE_lambda.pdf", height = h, width = w)
 # ggsave("results_DS_detect_prob.pdf", height = h, width = w)
 
 ae_detect_prob
-ggsave("results_AE_detect_prob.pdf", height = h, width = w)
+# ggsave("results_AE_detect_prob.pdf", height = h, width = w)
 
 setwd("..")
 
