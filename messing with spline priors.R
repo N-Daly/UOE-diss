@@ -130,8 +130,8 @@ detect_plot <- ggplot(ss, aes(dist,prob, group=sim)) +
     plot.subtitle = element_text(size=rel(2)),
     axis.title.y  = element_text(size=rel(2)),
     axis.title.x  = element_text(size=rel(2)),
-    axis.text.x = element_text(size=rel(2)),
-    axis.text.y = element_text(size=rel(2))
+    axis.text.x = element_text(size=rel(1.5)),
+    axis.text.y = element_text(size=rel(1.5))
   )
 
 detect_plot
@@ -153,7 +153,9 @@ spline_plot <- ggplot(ss, aes(dist,spline, group=sim)) +
     plot.title = element_text(size=rel(2)),
     plot.subtitle = element_text(size=rel(2)),
     axis.title.y  = element_text(size=rel(2)),
-    axis.title.x  = element_text(size=rel(2))
+    axis.title.x  = element_text(size=rel(2)),
+    axis.text.x = element_text(size=rel(1.5)),
+    axis.text.y = element_text(size=rel(1.5))
   )
 
 spline_plot
