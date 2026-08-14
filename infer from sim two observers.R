@@ -18,7 +18,7 @@ source("mesh construction methods.R")
 ########### state the ground truth
 
 true_sigmaA <- 1.75; true_sigmaB <- 2; true_gammaA <- 1; true_gammaB <- 4
-true_range <- 250; true_sigma_grf <- 1
+true_range <- 500; true_sigma_grf <- 1
 
 # work out the different probabilities of detection
 distance_ips <- fm_int(list(distance = fm_mesh_1d(seq(0,8, length.out=250))))
@@ -58,7 +58,7 @@ detect_mesh <- fm_mesh_1d(
   degree = 2
 )
 
-# alpha=2; rho <- 3; sigma <- 0.75
+# rho <- 50; sigma <- 2; alpha = 2
 detect_matern <- inla.spde2.pcmatern(
   detect_mesh,
   alpha = 2,
@@ -101,7 +101,7 @@ how_verbose <- 0
 sim_seed <- 1234 - 1
 
 # for saving the results
-file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "spatrange250 new spline simulation results.rda")
+file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "new spline simulation results.rda")
 
 for (i in 1:nsims){
   sim_seed <- sim_seed +1
