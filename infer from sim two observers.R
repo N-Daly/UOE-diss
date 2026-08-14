@@ -58,6 +58,7 @@ detect_mesh <- fm_mesh_1d(
   degree = 2
 )
 
+# should use
 # rho <- 50; sigma <- 2; alpha = 2
 detect_matern <- inla.spde2.pcmatern(
   detect_mesh,
@@ -101,7 +102,7 @@ how_verbose <- 0
 sim_seed <- 1234 - 1
 
 # for saving the results
-file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "new spline simulation results.rda")
+file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "dual HN sens analysis simulation results.rda")
 
 for (i in 1:nsims){
   sim_seed <- sim_seed +1
