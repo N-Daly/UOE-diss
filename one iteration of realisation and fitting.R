@@ -41,7 +41,7 @@ start <- proc.time()
 list_of_models[[name]] <- get_preds_from_one_observer_hn_fit(fit)
 list_of_models[[name]]$name <- "one_obs_hn"
 end <- proc.time()
-print((end-start)[3])
+# print((end-start)[3])
 
 # plot_loglambda_preds(
 #   pred_df = list_of_models[[name]]$pred_loglambda,
@@ -77,7 +77,7 @@ source("various dual hn fits.R")
 # list_of_models[[name]] <- get_preds_from_two_observers_hn_fit(fit)
 # list_of_models[[name]]$name <- name
 # end <- proc.time()
-# print((end-start)[3])
+# # print((end-start)[3])
 # 
 # # plot_loglambda_preds(
 # #   pred_df = list_of_models[[name]]$pred_loglambda,
@@ -114,7 +114,7 @@ source("various dual hn fits.R")
 # list_of_models[[name]] <- get_preds_from_one_observer_hr_fit(fit)
 # list_of_models[[name]]$name <- name
 # end <- proc.time()
-# print((end-start)[3])
+# # print((end-start)[3])
 # 
 # plot_loglambda_preds(
 #   pred_df = list_of_models[[name]]$pred_loglambda,
@@ -152,7 +152,7 @@ source("various dual hn fits.R")
 # list_of_models[[name]] <- get_preds_from_two_observers_hr_fit(fit)
 # list_of_models[[name]]$name <- name
 # end <- proc.time()
-# print((end-start)[3])
+# # print((end-start)[3])
 
 # plot_loglambda_preds(
 #   pred_df = list_of_models[[name]]$pred_loglambda,
@@ -180,7 +180,7 @@ source("various dual hn fits.R")
 # list_of_models[[name]] <- get_preds_from_one_observer_spline_fit(fit)
 # list_of_models[[name]]$name <- name
 # end <- proc.time()
-# print((end-start)[3])
+# # print((end-start)[3])
 # 
 # plot_loglambda_preds(
 #   pred_df = list_of_models[[name]]$pred_loglambda,
