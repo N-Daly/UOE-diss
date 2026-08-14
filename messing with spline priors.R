@@ -5,7 +5,9 @@ library(inlabru)
 library(sf)
 library(fmesher)
 library(ggplot2)
+library(patchwork)
 library(latex2exp)
+library(dplyr)
 
 my_dir <- r"(C:\Users\ND\OneDrive - University of Edinburgh\Dissertation\UOE-diss)"
 setwd(my_dir)
@@ -22,35 +24,40 @@ projector <- fm_evaluator(mesh, loc=dists_grid)
 
 
 plot_the_variance <- function(
-    the_mesh=mesh, distance=dists_grid,
-    alpha, rho, sigma
+    rho, sigma,
+    alpha = 2,
+    the_mesh=mesh, distance=dists_grid
   ){
   
-  Q <- fm_matern_precision(the_mesh, alpha, rho, sigma)
+  # the neumann condition forces the first basis to zero
+  # so here we take the conditional precision matrix of the other bases (base-ees?)
+  # which happtens to be a submatrix of the joint precision matrix
+  Q <- fm_matern_precision(the_mesh, rho, sigma, alpha)[-1, -1]
   
-  basis <- fm_basis(the_mesh, distance)
+  # consider only the remaining bases
+  basis <- fm_basis(the_mesh, distance)[, -1]
   
   Sigma <- diag( fm_covariance(Q, basis) )
   
-  title <- "Marginal variance of the Spline"
+  title <- TeX("Marginal variance of the quadratic B-spline $G(d)$")
   subtitle <- TeX(paste(
     "$\\alpha$ =", alpha,
     "$\\rho$ =", rho,
-    "$\\sigma$ = ", sigma
+    "$\\sigma_{u}$ = ", sigma
   ))
   
+  scale = 2
   plot(
     distance, Sigma,
-    # ylim=0:1,
     type="l",
-    main = title
+    main = title,
+    xlab = TeX("d"), # idk if this does anything tbh
+    ylab = "variance",
+    cex.lab = scale,
+    cex.main = scale
   )
   mtext(subtitle, cex = 1.5)
 }
-
-#not sure what good this is without accounting for the neumann condition
-# plot_the_variance(alpha=2,rho=1,sigma=1)
-
 
 sample_many_detect_priors <- function(
     rho, sigma,
@@ -84,20 +91,76 @@ sample_many_detect_priors <- function(
   df
 }
 
-rho <- 3; sigma <- 0.75
+rho <- 50; sigma <- 2; alpha = 2
+
+# plot the marginal variance of the spline with given matern hyperparameters
+setwd("figs")
+pdf("splinePriorCovar.pdf", width=10, height=10)
+plot_the_variance(rho = rho,sigma = sigma)
+dev.off()
+setwd("..")
+
+# sample from the prior distribution
+set.seed(1)
 ss <- sample_many_detect_priors(rho=rho, sigma = sigma, nsims=200)
 
-title <- TeX(paste(
-  "Realisations of spline detection function with $\\alpha = 2, \\rho =$",
-  rho,
-  "and $\\sigma =$",
-  sigma
+ss <- ss |> group_by(sim) |> dplyr::filter(all( prob <= 1) ) |> ungroup()
+
+length(unique(ss$sim))
+subtitle <- TeX(paste(
+  "$\\alpha$ =", alpha,
+  "$\\rho$ =", rho,
+  "$\\sigma_{u}$ = ", sigma
 ))
-(g <- ggplot(ss, aes(dist,prob, group=sim)) + 
+
+spline_title <- TeX("Realisations of a quadratic B-spline $G(d)$ from its prior distribution")
+detect_title <- TeX("Realisations of a spline detection function from its prior distribution" )
+
+detect_plot <- ggplot(ss, aes(dist,prob, group=sim)) + 
+  geom_line(alpha=.5) +
+  expand_limits(y=0:1) + 
+  labs(
+    title = detect_title,
+    subtitle = subtitle
+  ) +
+  ylab(TeX("$g(d; \\beta)$")) +
+  xlab(TeX("$d$")) +
+  theme(
+    plot.title = element_text(size=rel(2)),
+    plot.subtitle = element_text(size=rel(2)),
+    axis.title.y  = element_text(size=rel(2)),
+    axis.title.x  = element_text(size=rel(2)),
+    axis.text.x = element_text(size=rel(2)),
+    axis.text.y = element_text(size=rel(2))
+  )
+
+detect_plot
+
+setwd("figs")
+ggsave("BsplinePriors.pdf", w =10, h=10)
+setwd("..")
+
+spline_plot <- ggplot(ss, aes(dist,spline, group=sim)) + 
   geom_line(alpha=.4) +
   expand_limits(y=0:1) + 
-  ylim( 0, min(6, max(ss$prob)) )  +
-  labs(title = title) +
-  # geom_line(data=data.frame(prob=1, dist = dists_grid, sim=-1), colour= "red")+
-    geom_hline(yintercept= 1, linewidth = 2, colour = "red")
-)
+  labs(
+    title = spline_title,
+    subtitle = subtitle
+  ) +
+  ylab(TeX("$G(d)$")) +
+  xlab(TeX("$d$")) +
+  theme(
+    plot.title = element_text(size=rel(2)),
+    plot.subtitle = element_text(size=rel(2)),
+    axis.title.y  = element_text(size=rel(2)),
+    axis.title.x  = element_text(size=rel(2))
+  )
+
+spline_plot
+
+setwd("figs")
+ggsave("splineDetectPriors.pdf", w =10, h=10)
+setwd("..")
+
+
+print(spline_plot + detect_plot)
