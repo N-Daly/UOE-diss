@@ -37,7 +37,7 @@ for (config in different_configs){
   
   
   rm(fit); invisible(gc())
-  catt("fitting ", config$name)
+  catt("fitting dual HN", config$name)
   fit_start <- proc.time()
   fit <-  model_two_observers_hn(
     observed_points,
