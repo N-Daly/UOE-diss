@@ -202,9 +202,9 @@ get_scoring_differences <- function(
       DS_loglambda = sum(ips_for_pred$weight * (mod$DS_loglambda - base_mod$DS_loglambda)),
       loglambda_SE = sum(ips_for_pred$weight * (mod$loglambda_SE - base_mod$loglambda_SE)),
       lambda_AE = sum(ips_for_pred$weight * (mod$lambda_AE - base_mod$lambda_AE)),
-      detect_AE = mean(mod$detect_AE - base_mod$detect_AE), # should update this to a int scheme
+      detect_AE = sum(distance_ips$weight * (mod$detect_AE - base_mod$detect_AE) ) , 
       DS_detect_prob = mod$DS_detect_prob - base_mod$DS_detect_prob,
-      DS_avg_detect_prob = mod$DS_avg_prob - base_mod$DS_avg_prob
+      DS_avg_detect_prob = sum(distance_ips$weight * (mod$DS_avg_prob - base_mod$DS_avg_prob) )
     )
     
     mod_diff$model <- mod$name
@@ -354,7 +354,7 @@ lets_have_a_look_at_you <- function(
     geom_sf(data = sim_info$boundary, alpha = 0.1) +
     labs(title = "True underlying log intensity") +
     scale_fill_continuous(
-      name = "Density",
+      name = "Log intensity",
       limits = range(approx_intensity_range, pxls$loglambda)
       ) + 
     theme( 
