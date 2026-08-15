@@ -53,7 +53,7 @@ end <- proc.time()
 #   main = name
 # )
 
-source("various dual hn fits.R")
+source("various dual HR fits.R")
 # name <- "two_obs_hn"
 # rm(fit); invisible(gc())
 # # # Model what A and B saw as a two observer likelihood with hn detection functions

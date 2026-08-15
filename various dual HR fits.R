@@ -94,12 +94,12 @@ for (config in different_configs){
   list_of_models[[config$name]]$name <- config$name
   list_of_models[[config$name]]$fit_time <- round(fit_time)
   end <- proc.time()
-  print((end-start)[3])
+  # print((end-start)[3])
   
   # plot some predictions
-  plot_detect_pred(
-    pred_df = list_of_models[[config$name]]$pred_detect,
-    main = config$name
-  )
+  # plot_detect_pred(
+  #   pred_df = list_of_models[[config$name]]$pred_detect,
+  #   main = config$name
+  # )
   
 }

@@ -96,13 +96,13 @@ true_detect_prob <- pany
 # some_results
 
 ############ Repeated simulations
-nsims <- 30
+nsims <- 30 
 results <- NULL
 how_verbose <- 0
 sim_seed <- 1234 - 1
 
 # for saving the results
-file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "dual HN sens analysis simulation results.rda")
+file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "dual HR sens analysis simulation results.rda")
 
 for (i in 1:nsims){
   sim_seed <- sim_seed +1
