@@ -104,15 +104,14 @@ setwd("..")
 
 ############# simulation results plots
 
-# setwd("sim_results")
-# r <- readRDS("09-08-2026 00-35 30simulation results.rda")
-# # r <- readRDS("13-08-2026 12-33 spatrange250 new spline simulation results.rda ")
-# setwd("..")
+setwd("sim_results")
+r <- readRDS("09-08-2026 00-35 30simulation results.rda")
+setwd("..")
 # r
 
-# old_models <- c("two_obs_hn", "one_obs_HR", "one_obs_spline" ,  "two_obs_HR")
-# new_models <- c("Dual HN", "HR", "Spline", "Dual HR")
-# r$model <- rename(r$model, old_models, new_models); unique(r$model)
+old_models <- c("two_obs_hn", "one_obs_HR", "one_obs_spline" ,  "two_obs_HR")
+new_models <- c("Dual HN", "HR", "Spline", "Dual HR")
+r$model <- rename(r$model, old_models, new_models); unique(r$model)
 
 g <- ggplot(
   data = r, aes(fill=model)
@@ -150,21 +149,21 @@ ae_detect_prob <- g + geom_boxplot(aes(detect_AE, model)) +
     x = "Differenced Absolute error"
   )
 
-# h <- 7; w<- 9
-# setwd("figs")
-# ds_ll
-# ggsave("results_DS_loglambda.pdf", height = h, width = w)
-# 
-# se_ll
-# ggsave("results_SE_loglambda.pdf", height = h, width = w)
-# 
-# ae_l
-# ggsave("results_AE_lambda.pdf", height = h, width = w)
-# 
-# ae_detect_prob
-# ggsave("results_AE_detect_prob.pdf", height = h, width = w)
-# 
-# setwd("..")
+h <- 7; w<- 9.5
+setwd("figs")
+ds_ll
+ggsave("results_DS_loglambda.pdf", height = h, width = w)
+
+se_ll
+ggsave("results_SE_loglambda.pdf", height = h, width = w)
+
+ae_l
+ggsave("results_AE_lambda.pdf", height = h, width = w)
+
+ae_detect_prob
+ggsave("results_AE_detect_prob.pdf", height = h, width = w)
+
+setwd("..")
 
 
 
