@@ -37,11 +37,40 @@ fit <- model_one_observer_hn(
 end <- proc.time()
 print((end-start)[3])
 
-start <- proc.time()
 list_of_models[[name]] <- get_preds_from_one_observer_hn_fit(fit)
 list_of_models[[name]]$name <- "one_obs_hn"
+
+# plot_loglambda_preds(
+#   pred_df = list_of_models[[name]]$pred_loglambda,
+#   main = name,
+#   true_vals = true_loglambda_at_ip
+# )
+# plot_detect_pred(
+#   pred_df = list_of_models[[name]]$pred_detect,
+#   main = name
+# )
+
+name <- "two_obs_hn"
+rm(fit); invisible(gc())
+# # Model what A and B saw as a two observer likelihood with hn detection functions
+catt("fitting", name)
+start <- proc.time()
+fit <- model_two_observers_hn(
+  observed_points,
+  prior_on_sigma = bm_marginal(qexp, pexp, dexp, rate = 1/2),
+  mtrn_prior = matern_prior,
+  ips = ips_with_detection_states,
+  bru_initial_params = list(
+    sigmaA = qexp(pnorm(2), rate = 1/2),
+    sigmaB = qexp(pnorm(2), rate = 1/2)
+  ),
+  bru_verbose=how_verbose
+)
 end <- proc.time()
-# print((end-start)[3])
+print((end-start)[3])
+
+list_of_models[[name]] <- get_preds_from_two_observers_hn_fit(fit)
+list_of_models[[name]]$name <- name
 
 # plot_loglambda_preds(
 #   pred_df = list_of_models[[name]]$pred_loglambda,
@@ -53,106 +82,28 @@ end <- proc.time()
 #   main = name
 # )
 
-source("various dual HR fits.R")
-# name <- "two_obs_hn"
-# rm(fit); invisible(gc())
-# # # Model what A and B saw as a two observer likelihood with hn detection functions
-# catt("fitting", name)
-# start <- proc.time()
-# fit <- model_two_observers_hn(
-#   observed_points,
-#   prior_on_sigma = bm_marginal(qexp, pexp, dexp, rate = 2/8),
-#   mtrn_prior = matern_prior,
-#   ips = ips_with_detection_states,
-#   bru_initial_params = list(
-#     sigmaA = qexp(pnorm(2), rate = 2/8),
-#     sigmaB = qexp(pnorm(2), rate = 2/8)
-#   ),
-#   bru_verbose=how_verbose
-# )
-# end <- proc.time()
-# print((end-start)[3])
-# 
-# start <- proc.time()
-# list_of_models[[name]] <- get_preds_from_two_observers_hn_fit(fit)
-# list_of_models[[name]]$name <- name
-# end <- proc.time()
-# # print((end-start)[3])
-# 
-# # plot_loglambda_preds(
-# #   pred_df = list_of_models[[name]]$pred_loglambda,
-# #   main = name,
-# #   true_vals = true_loglambda_at_ip
-# # )
-# # plot_detect_pred(
-# #   pred_df = list_of_models[[name]]$pred_detect,
-# #   main = name
-# # )
 
+rm(fit); invisible(gc())
+# Model what A and B saw as a combined observer with a  hazard-rate detection function
+name <- "one_obs_HR"
+catt("fitting", name)
+start <- proc.time()
+fit <- model_one_observer_hr(
+  observed_points,
+  mtrn_prior =  matern_prior,
+  ips=ips,
+  prior_on_gamma = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
+  bru_initial_params = list(
+    sigma = qnorm(pexp(2, rate= 1/8)),
+    gamma = qnorm(pgamma(2, shape=2, rate=1))
+  ),
+  bru_verbose = how_verbose
+)
+end <- proc.time()
+print((end-start)[3])
 
-# rm(fit); invisible(gc())
-# # Model what A and B saw as a combined observer with a  hazard-rate detection function
-# name <- "one_obs_HR"
-# catt("fitting", name)
-# start <- proc.time()
-# fit <- model_one_observer_hr(
-#   observed_points,
-#   mtrn_prior =  matern_prior,
-#   ips=ips,
-#   prior_on_gamma = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
-#   bru_initial_params = list(
-#     sigma = qnorm(pexp(2, rate= 1/8)),
-#     gamma = qnorm(pgamma(2, shape=2, rate=1))
-#   ),
-#   bru_verbose = how_verbose
-# )
-# end <- proc.time()
-# print((end-start)[3])
-# 
-# 
-# start <- proc.time()
-# list_of_models[[name]] <- get_preds_from_one_observer_hr_fit(fit)
-# list_of_models[[name]]$name <- name
-# end <- proc.time()
-# # print((end-start)[3])
-# 
-# plot_loglambda_preds(
-#   pred_df = list_of_models[[name]]$pred_loglambda,
-#   main = name,
-#   true_vals = true_loglambda_at_ip
-# )
-# plot_detect_pred(
-#   pred_df = list_of_models[[name]]$pred_detect,
-#   main = name
-# )
-
-# 
-# rm(fit); invisible(gc())
-# name <- "two_obs_HR"
-# catt("fitting dual HR")
-# start <- proc.time()
-# fit <- model_two_observers_hr(
-#   observed_points,
-#   prior_on_gamma = bm_marginal(qunif, punif, dunif, min = 0.01, max = 10),
-#   prior_on_sigma = bm_marginal(qexp, pexp, dexp, rate = 1/2),
-#   bru_initial_params = list(
-#     gammaA = qnorm(punif(1, min = 0.01, max = 10)),
-#     gammaB = qnorm(punif(4, min = 0.01, max = 10)),
-#     sigmaA = qnorm(pexp(2, rate = 1/2)),
-#     sigmaB = qnorm(pexp(2, rate = 1/2))
-#   ),
-#   mtrn_prior = matern_prior,
-#   ips=ips_with_detection_states,
-#   bru_verbose=how_verbose
-# )
-# end <- proc.time()
-# print((end-start)[3])
-# 
-# start <- proc.time()
-# list_of_models[[name]] <- get_preds_from_two_observers_hr_fit(fit)
-# list_of_models[[name]]$name <- name
-# end <- proc.time()
-# # print((end-start)[3])
+list_of_models[[name]] <- get_preds_from_one_observer_hr_fit(fit)
+list_of_models[[name]]$name <- name
 
 # plot_loglambda_preds(
 #   pred_df = list_of_models[[name]]$pred_loglambda,
@@ -166,22 +117,54 @@ source("various dual HR fits.R")
 
 
 # rm(fit); invisible(gc())
-# # Model what A and B saw as a combined observer with a spline(like) detection function
-# name <- "one_obs_spline"
-# catt("fitting", name)
-# start <- proc.time()
-# fit <- model_one_observer_spline(
-#   observed_points, matern_prior, detect_matern, ips=ips, bru_verbose=how_verbose
+name <- "two_obs_HR"
+catt("fitting dual HR")
+start <- proc.time()
+fit <- model_two_observers_hr(
+  observed_points,
+  prior_on_gamma = bm_marginal(qunif, punif, dunif, min = 0.01, max = 10),
+  prior_on_sigma = bm_marginal(qexp, pexp, dexp, rate = 1/2),
+  bru_initial_params = list(
+    gammaA = qnorm(punif(1, min = 0.01, max = 10)),
+    gammaB = qnorm(punif(4, min = 0.01, max = 10)),
+    sigmaA = qnorm(pexp(2, rate = 1/2)),
+    sigmaB = qnorm(pexp(2, rate = 1/2))
+  ),
+  mtrn_prior = matern_prior,
+  ips=ips_with_detection_states,
+  bru_verbose=how_verbose
+)
+end <- proc.time()
+print((end-start)[3])
+
+list_of_models[[name]] <- get_preds_from_two_observers_hr_fit(fit)
+list_of_models[[name]]$name <- name
+
+# plot_loglambda_preds(
+#   pred_df = list_of_models[[name]]$pred_loglambda,
+#   main = name,
+#   true_vals = true_loglambda_at_ip
 # )
-# end <- proc.time()
-# print((end-start)[3])
-# 
-# start <- proc.time()
-# list_of_models[[name]] <- get_preds_from_one_observer_spline_fit(fit)
-# list_of_models[[name]]$name <- name
-# end <- proc.time()
-# # print((end-start)[3])
-# 
+# plot_detect_pred(
+#   pred_df = list_of_models[[name]]$pred_detect,
+#   main = name
+# )
+
+
+rm(fit); invisible(gc())
+# Model what A and B saw as a combined observer with a spline(like) detection function
+name <- "one_obs_spline"
+catt("fitting", name)
+start <- proc.time()
+fit <- model_one_observer_spline(
+  observed_points, matern_prior, detect_matern, ips=ips, bru_verbose=how_verbose
+)
+end <- proc.time()
+print((end-start)[3])
+
+list_of_models[[name]] <- get_preds_from_one_observer_spline_fit(fit)
+list_of_models[[name]]$name <- name
+
 # plot_loglambda_preds(
 #   pred_df = list_of_models[[name]]$pred_loglambda,
 #   main = name,

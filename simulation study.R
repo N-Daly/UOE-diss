@@ -86,15 +86,6 @@ proj_from_DGP_mesh_to_intensity_pred_locs <- fm_evaluator(
 true_detect_prob <- pany
 
 
-############## Simulation
-
-
-# set.seed(800)
-# how_verbose = 0
-# # source("one iteration of gamma fits.R")
-# source("one iteration of realisation and fitting.R")
-# some_results
-
 ############ Repeated simulations
 nsims <- 30 
 results <- NULL
@@ -102,7 +93,7 @@ how_verbose <- 0
 sim_seed <- 1234 - 1
 
 # for saving the results
-file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "dual HR sens analysis simulation results.rda")
+file_name <- paste(format(Sys.time(), "%d-%m-%Y %H-%M"), "simulation results.rda")
 
 for (i in 1:nsims){
   sim_seed <- sim_seed +1
