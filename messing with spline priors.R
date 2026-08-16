@@ -51,7 +51,7 @@ plot_the_variance <- function(
     distance, Sigma,
     type="l",
     main = title,
-    xlab = TeX("d"), # idk if this does anything tbh
+    xlab = TeX("distance, $d$, in km"), # idk if this does anything tbh
     ylab = "variance",
     cex.lab = scale,
     cex.main = scale
@@ -116,7 +116,7 @@ subtitle <- TeX(paste(
 spline_title <- TeX("Realisations of a quadratic B-spline $G(d)$ from its prior distribution")
 detect_title <- TeX("Realisations of a spline detection function from its prior distribution" )
 
-detect_plot <- ggplot(ss, aes(dist,prob, group=sim)) + 
+detect_plot <- ggplot(ss, aes(dist, prob, group=sim)) + 
   geom_line(alpha=.5) +
   expand_limits(y=0:1) + 
   labs(
@@ -124,7 +124,7 @@ detect_plot <- ggplot(ss, aes(dist,prob, group=sim)) +
     subtitle = subtitle
   ) +
   ylab(TeX("$g(d; \\beta)$")) +
-  xlab(TeX("$d$")) +
+  xlab(TeX("distance, $d$, in km")) +
   theme(
     plot.title = element_text(size=rel(2)),
     plot.subtitle = element_text(size=rel(2)),
@@ -148,7 +148,7 @@ spline_plot <- ggplot(ss, aes(dist,spline, group=sim)) +
     subtitle = subtitle
   ) +
   ylab(TeX("$G(d)$")) +
-  xlab(TeX("$d$")) +
+  xlab(TeX("distance, $d$, in km")) +
   theme(
     plot.title = element_text(size=rel(2)),
     plot.subtitle = element_text(size=rel(2)),
