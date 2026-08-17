@@ -103,7 +103,6 @@ ggsave("meshConstructionMethod3.pdf", height = 15 ,width = 20)
 setwd("..")
 }
 
-
 ######### show an example of the true log intensity
 if(FALSE){
   
@@ -170,7 +169,6 @@ setwd("..")
 }
 
 ############# simulation results plots
-
 if(FALSE){
 
 setwd("sim_results")
@@ -263,7 +261,7 @@ setwd("..")
 # 
 # new_ylab<-  ylab(TeX("Choice of priors for $\\gamma$ and $\\sigma$"))
 # 
-# h <- 9; w<- 11
+# h <- 9; w<- 12
 # setwd("figs")
 # ds_ll + new_ylab
 # ggsave("sens_ans_HR_DS_loglambda.pdf", height = h, width = w)
@@ -303,6 +301,7 @@ setwd("..")
 # 
 # setwd("..")
 }
+
 ############# 
 
 if(FALSE){
