@@ -9,7 +9,8 @@ library(patchwork)
 library(dplyr)
 library(ggspatial)
 library(latex2exp)
-
+library(knitr)
+library(tinytex)
 
 my_dir <- r"(C:\Users\ND\OneDrive - University of Edinburgh\Dissertation\UOE-diss)"
 setwd(my_dir)
@@ -102,12 +103,80 @@ ggsave("meshConstructionMethod3.pdf", height = 15 ,width = 20)
 setwd("..")
 }
 
+
+######### show an example of the true log intensity
+if(TRUE){
+  
+# this seed gives a nice picture
+#  1238, 1250, 1252
+set.seed(1250)
+
+# this should be copy pasted from the simulation study
+true_sigmaA <- 1.75; true_sigmaB <- 2; true_gammaA <- 1; true_gammaB <- 4
+true_range <- 500; true_sigma_grf <- 1
+mesh <- make_spatially_varying_mesh3(60, coarse=60)
+
+sim_info <- simulate_lcgp_dual_obs_HR_thinning(
+  true_sigmaA = true_sigmaA, true_sigmaB = true_sigmaB,
+  true_gammaA = true_gammaA, true_gammaB = true_gammaB,
+  true_beta0 = -4,
+  true_rho = true_range, true_sigma_GRF = true_sigma_grf
+)
+
+# set a range so the colour gradient changes little accross different realisations
+approx_intensity_range <- c(-6, -3)
+
+# plot the thing
+pxls <- fm_pixels(sim_info$the_mesh, mask = sim_info$boundary, dims = rep(250, 2))
+
+pxls$loglambda <- fm_evaluate(sim_info$the_mesh, loc= pxls, field=sim_info$log_lambda )
+
+intensity_plot <- ggplot() +
+  gg(sim_info$boundary, alpha= .1) +
+  geom_tile(
+    data = pxls,
+    aes(geometry = geometry, fill = loglambda),
+    stat = "sf_coordinates"  
+  ) +
+  geom_sf(data = sim_info$boundary, alpha = 0.1) +
+  labs(
+    title = "A realisation of the true underlying log intensity"
+  ) +
+  scale_fill_continuous(
+    name = "Log intensity",
+    limits = range(approx_intensity_range, pxls$loglambda)
+  ) + 
+  theme( 
+    axis.title = element_blank()
+  ) + 
+  ggspatial::annotation_scale()
+
+intensity_plot
+
+# there is a bit of pain involved in removing the whitespace
+# the ggplot theme(plot.margin=grid::unit(c(0,0,0,0), "mm")) did not work
+# so we used knitr's plot_crop which has a dependency PDFcrop
+# PDFcrop is not installed via knitr but can be installed via tinytex
+
+if ( all(Sys.which('pdfcrop') == "") ){
+  tinytex::tlmgr_install('pdfcrop')
+}
+
+f_name <- "exampleDGPlogintensity.pdf"
+setwd("figs")
+ggsave(f_name, width = 9, height = 7)
+knitr::plot_crop(f_name)
+setwd("..")
+}
+
 ############# simulation results plots
+
+if(FALSE){
 
 setwd("sim_results")
 r <- readRDS("09-08-2026 00-35 30simulation results.rda")
 setwd("..")
-# r
+r
 
 old_models <- c("two_obs_hn", "one_obs_HR", "one_obs_spline" ,  "two_obs_HR")
 new_models <- c("Dual HN", "HR", "Spline", "Dual HR")
@@ -168,46 +237,46 @@ setwd("..")
 
 
 ########## artifacts from plotting dual HR sensitivity analysis
-setwd("sim_results")
-r <- readRDS("12-08-2026 17-30 dual HR sens ans.rda")
-setwd("..")
-
-old_hr_priors <- c(
-  "Gamma Gamma(2,1) Sigma Exp(1/8)",
-  "Gamma Gamma(2,1) Sigma Exp(1/2)" ,
-  "Gamma Unif(0.01, 10) Sigma Exp(1/2)" ,
-  "Gamma Unif(0.01, 10) Sigma Exp(1/8)" ,
-  "Gamma Unif(0.01, 10) Sigma Unif(0.001, 15)",
-  "Gamma Gamma(2,1) Sigma Gamma(4, 1)"
-)
-
-new_hr_priors <- c(
-  "Gamma(2,1), Exp(1/8)" ,
-  "Gamma(2,1), Exp(1/2)" ,
-  "Unif(0.01, 10), Exp(1/2)"   ,
-  "Unif(0.01, 10), Exp(1/8)"  ,
-  "Unif(0.01, 10), Unif(0.001, 15)",
-  "Gamma(2,1), Gamma(4, 1)"
-)
-
-r$model <- rename(r$model, old_hr_priors, new_hr_priors); unique(r$model)
-
-new_ylab<-  ylab(TeX("Choice of priors for $\\gamma$ and $\\sigma$"))
-
-h <- 9; w<- 11
-setwd("figs")
-ds_ll + new_ylab
-ggsave("sens_ans_HR_DS_loglambda.pdf", height = h, width = w)
-
-se_ll + new_ylab
-ggsave("sens_ans_HR_SE_loglambda.pdf", height = h, width = w)
-
-ae_l + new_ylab
-ggsave("sens_ans_HR_AE_lambda.pdf", height = h, width = w)
-
-ae_detect_prob + new_ylab
-ggsave("sens_ans_HR_AE_detect_prob.pdf", height = h, width = w)
-setwd("..")
+# setwd("sim_results")
+# r <- readRDS("12-08-2026 17-30 dual HR sens ans.rda")
+# setwd("..")
+# 
+# old_hr_priors <- c(
+#   "Gamma Gamma(2,1) Sigma Exp(1/8)",
+#   "Gamma Gamma(2,1) Sigma Exp(1/2)" ,
+#   "Gamma Unif(0.01, 10) Sigma Exp(1/2)" ,
+#   "Gamma Unif(0.01, 10) Sigma Exp(1/8)" ,
+#   "Gamma Unif(0.01, 10) Sigma Unif(0.001, 15)",
+#   "Gamma Gamma(2,1) Sigma Gamma(4, 1)"
+# )
+# 
+# new_hr_priors <- c(
+#   "Gamma(2,1), Exp(1/8)" ,
+#   "Gamma(2,1), Exp(1/2)" ,
+#   "Unif(0.01, 10), Exp(1/2)"   ,
+#   "Unif(0.01, 10), Exp(1/8)"  ,
+#   "Unif(0.01, 10), Unif(0.001, 15)",
+#   "Gamma(2,1), Gamma(4, 1)"
+# )
+# 
+# r$model <- rename(r$model, old_hr_priors, new_hr_priors); unique(r$model)
+# 
+# new_ylab<-  ylab(TeX("Choice of priors for $\\gamma$ and $\\sigma$"))
+# 
+# h <- 9; w<- 11
+# setwd("figs")
+# ds_ll + new_ylab
+# ggsave("sens_ans_HR_DS_loglambda.pdf", height = h, width = w)
+# 
+# se_ll + new_ylab
+# ggsave("sens_ans_HR_SE_loglambda.pdf", height = h, width = w)
+# 
+# ae_l + new_ylab
+# ggsave("sens_ans_HR_AE_lambda.pdf", height = h, width = w)
+# 
+# ae_detect_prob + new_ylab
+# ggsave("sens_ans_HR_AE_detect_prob.pdf", height = h, width = w)
+# setwd("..")
 
 ########## artifacts from plotting dual HN sensitivity analysis
 # setwd("sim_results")
@@ -233,5 +302,5 @@ setwd("..")
 # ggsave("sens_ans_HN_AE_detect_prob.pdf", height = h, width = w)
 # 
 # setwd("..")
-
+}
 ########## 
