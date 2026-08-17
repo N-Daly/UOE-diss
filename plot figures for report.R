@@ -105,7 +105,7 @@ setwd("..")
 
 
 ######### show an example of the true log intensity
-if(TRUE){
+if(FALSE){
   
 # this seed gives a nice picture
 #  1238, 1250, 1252
@@ -123,7 +123,7 @@ sim_info <- simulate_lcgp_dual_obs_HR_thinning(
   true_rho = true_range, true_sigma_GRF = true_sigma_grf
 )
 
-# set a range so the colour gradient changes little accross different realisations
+# set a range so the colour gradient changes little across different realisations
 approx_intensity_range <- c(-6, -3)
 
 # plot the thing
@@ -303,4 +303,36 @@ setwd("..")
 # 
 # setwd("..")
 }
-########## 
+############# 
+
+if(FALSE){
+
+setwd("sim_results")
+r <- readRDS("09-08-2026 00-35 30simulation results.rda")
+setwd("..")
+r
+
+old_models <- c("two_obs_hn", "one_obs_HR", "one_obs_spline" ,  "two_obs_HR")
+new_models <- c("Dual \\hn{}", "\\MakeTitlecase{\\hr{}}", "Spline", "Dual \\hr{}")
+r$model <- rename(r$model, old_models, new_models); unique(r$model)
+
+r$Model <- r$model; r$model <- NULL
+
+s <- r |>
+  group_by(Model) |>
+  summarise(
+    "5th percentile" = quantile(detect_AE, probs=.5),
+    "Median" = median(detect_AE),
+    "95th percentile" = quantile(detect_AE, probs=.1),
+  ) 
+s
+
+setwd("figs") # anarchic
+write.csv(
+  s, "table_detect_AE.csv",
+  row.names = F,
+  quote= F
+)
+setwd("..")
+}
+############# 
