@@ -172,7 +172,7 @@ setwd("..")
 if(FALSE){
 
 setwd("sim_results")
-r <- readRDS("09-08-2026 00-35 30simulation results.rda")
+r <- readRDS("18-08-2026 12-57 simulation results.rda")
 setwd("..")
 r
 
@@ -218,16 +218,16 @@ ae_detect_prob <- g + geom_boxplot(aes(detect_AE, model)) +
 
 h <- 7; w<- 9.5
 setwd("figs")
-ds_ll
+print(ds_ll)
 ggsave("results_DS_loglambda.pdf", height = h, width = w)
 
-se_ll
+print(se_ll)
 ggsave("results_SE_loglambda.pdf", height = h, width = w)
 
-ae_l
+print(ae_l)
 ggsave("results_AE_lambda.pdf", height = h, width = w)
 
-ae_detect_prob
+print(ae_detect_prob)
 ggsave("results_AE_detect_prob.pdf", height = h, width = w)
 
 setwd("..")
@@ -307,7 +307,7 @@ setwd("..")
 if(FALSE){
 
 setwd("sim_results")
-r <- readRDS("09-08-2026 00-35 30simulation results.rda")
+r <- readRDS("18-08-2026 12-57 simulation results.rda")
 setwd("..")
 r
 
