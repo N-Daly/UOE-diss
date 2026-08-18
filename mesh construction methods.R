@@ -5,7 +5,7 @@ library(inlabru)
 library(sf)
 library(fmesher)
 library(ggplot2)
-library("patchwork")
+library(patchwork)
 library(ggspatial)
 
 my_dir <- r"(C:\Users\ND\OneDrive - University of Edinburgh\Dissertation\UOE-diss)"
@@ -40,7 +40,7 @@ get_nonoverlapping_samplers <- function(ltransects=mexdolphin_sf$samplers){
 # reconstruct the points' perpendicular distance using the mesh
 eval_mesh <- function(a_mesh){
 
-  field <- dist_to_nearest_line_transect(fm_vertices(a_mesh), sim_info$line_transects)
+  field <- dist_to_nearest_line_transect(fm_vertices(a_mesh))
 
    approximated_distance <- fm_evaluate(
     a_mesh, field = field, loc= pts$geometry
@@ -84,13 +84,13 @@ fit_model_with_it <- function(mesh, ips){
   )
 
   fit <- model_one_observer_hr(
-    dd = sim_info$samples_df,
+    sim_info$samples_df,
     mtrn_prior =  matern_prior,
     ips=ips,
-    prior_on_gamma = bm_marginal(qunif, punif, dunif, min=0.0001, max = 10),
+    prior_on_gamma = bm_marginal(qgamma, pgamma, dgamma, shape=2, rate=1),
     bru_initial_params = list(
       sigma = qnorm(pexp(2, rate= 1/8)),
-      gamma = qnorm(punif(2, min=0.0001, max = 10))
+      gamma = qnorm(pgamma(2, shape=2, rate=1))
     ),
     bru_verbose = 1
   )
@@ -98,6 +98,8 @@ fit_model_with_it <- function(mesh, ips){
   fit
 }
 
+# it was checked if there was any variation in model fitting times for the same 
+# mesh/ips. there is not.
 repeated_model_fitting <- function(..., nreps=5){
   
   fit_times <- numeric(nreps)
@@ -117,7 +119,7 @@ repeated_model_fitting <- function(..., nreps=5){
 }
 ################ the actual function ############
 
-make_spatially_varying_mesh <- function(num_vertices){
+make_spatially_varying_mesh1 <- function(num_vertices){
 
   # this determines the target max edge length from each initially seeded vertex
   qual_loc <- function(locs){
@@ -252,17 +254,25 @@ make_spatially_varying_mesh3 <- function(hex_length, subdivisions=0, coarse_edge
 }
 
 test_param_tradeoff <- function(
-    mesh_maker, params, subtitle, verbose=T,
-    file_name= paste("trade off plot", format(Sys.time(), "%d-%m-%Y %H-%M"), ".pdf")
+    func_name, params, subtitle, sim_info,
+    verbose=T
   ){
-
+  
+  mesh_maker <-get(func_name)
+  
+  file_name <-  paste0(
+    format(Sys.time(), "%d-%m-%Y %H-%M"),
+    func_name,
+    "tradeoff.pdf"
+  )
+  
   fit_time <- NULL
   error <- NULL
   
   for (param in params){
-    cat("\n param =", param, "\n")
+    cat("\n       ", func_name, "param =", param, "\n")
     
-    rm(m, ips, some_model_fit); gc()
+    rm(m, ips, some_model_fit); invisible(gc())
     
     start <- proc.time()
     cat("making mesh and ips \n")
@@ -293,7 +303,7 @@ test_param_tradeoff <- function(
     some_model_fit <- fit_model_with_it(m, ips)
     end <- proc.time()
     run_time <- (end-start)[[3]]
-    print( (end-start)[3])
+    print(run_time)
   
     
     #record stats
@@ -309,7 +319,8 @@ test_param_tradeoff <- function(
   plot(
     error, 
     fit_time,
-    ylim = range(0, 60, fit_time),
+    # accross all methods and params, 80 puts them roughly on the same scale
+    ylim = range(0, 75, fit_time), 
     xlim = range(0:1, error),
     type = "c", # lines near but not connecting each point
     xlab = "MAPE as %",
@@ -334,7 +345,7 @@ test_param_tradeoff <- function(
 }
 
 
-if (FALSE){
+if (T){
   
   ### get some data
   set.seed(123)
@@ -347,33 +358,39 @@ if (FALSE){
   actual_distance <- pts$distance
   
   set.seed(123)
-  sim_info <- simulate_lcgp_distance_thinning(
-    detect_func = hn,
-    detect_func_paramA = 1,
-    detect_func_paramB = 4,
-    true_beta0 = -5,
-    true_rho = 500, true_sigma_GRF=1
-  )
+  true_sigmaA <- 1.75; true_sigmaB <- 2; true_gammaA <- 1; true_gammaB <- 4
+  true_range <- 500; true_sigma_grf <- 1
   
+  sim_info <- simulate_lcgp_dual_obs_HR_thinning(
+    true_sigmaA = true_sigmaA, true_sigmaB = true_sigmaB,
+    true_gammaA = true_gammaA, true_gammaB = true_gammaB,
+    true_beta0 = -4,
+    true_rho = true_range, true_sigma_GRF = true_sigma_grf
+  )
   
   nonoverlapping <- get_nonoverlapping_samplers()
   
+  # V3 5:1
+  # V2 0:4
+  # V1 1:10*10
+  
   different_setups <- list(
-    list(func=make_spatially_varying_mesh3, params=5:1, subtitle = "lattice edge lengths within transect segments"),
-    list(func=make_spatially_varying_mesh2, params=0:4, subtitle = "further mesh subdivisions"),
-    list(func=make_spatially_varying_mesh, params=1:10*10, subtitle = "number of vertices in each mesh, in 1000s")
+    list(func_name="make_spatially_varying_mesh3", params=1, subtitle = "lattice edge lengths within transect segments"),
+    list(func_name="make_spatially_varying_mesh2", params=4, subtitle = "further mesh subdivisions"),
+    list(func_name="make_spatially_varying_mesh1", params=10*10, subtitle = "number of vertices in each mesh, in 1000s")
   )
   
-  
+  setwd("sim_results")
   for (setup in different_setups){
-    results <- test_param_tradeoff(
-      setup$func,
+    test_param_tradeoff(
+      setup$func_name,
       setup$params,
       setup$subtitle,
-      verbose = F
+      sim_info,
+      verbose = T
     )
   }
-
+  setwd("..")
 }
 
 # # sanity check all meshes cover the nominal study area
