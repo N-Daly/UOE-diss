@@ -370,14 +370,10 @@ if (T){
   
   nonoverlapping <- get_nonoverlapping_samplers()
   
-  # V3 5:1
-  # V2 0:4
-  # V1 1:10*10
-  
   different_setups <- list(
-    list(func_name="make_spatially_varying_mesh3", params=1, subtitle = "lattice edge lengths within transect segments"),
-    list(func_name="make_spatially_varying_mesh2", params=4, subtitle = "further mesh subdivisions"),
-    list(func_name="make_spatially_varying_mesh1", params=10*10, subtitle = "number of vertices in each mesh, in 1000s")
+    list(func_name="make_spatially_varying_mesh3", params=5:1, subtitle = "lattice edge lengths within transect segments"),
+    list(func_name="make_spatially_varying_mesh2", params=0:4, subtitle = "further mesh subdivisions"),
+    list(func_name="make_spatially_varying_mesh1", params=1:10*10, subtitle = "number of vertices in each mesh, in 1000s")
   )
   
   setwd("sim_results")
