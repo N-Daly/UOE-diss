@@ -43,8 +43,10 @@ true_detect_prob_df <- data.frame(
 ######## set up before modelling
 mesh <- make_spatially_varying_mesh3(60, coarse=60)
 
+setwd("precomputed stuff")
 ips <- readRDS("ips make_spatially_varying_mesh3 hex edge length 2-30.rda")
 ips_with_detection_states <- readRDS("ips_with_detect make_spatially_varying_mesh3 hex edge length 2-30.rda")
+setwd("..")
 
 matern_prior <- inla.spde2.pcmatern(
   mesh,
