@@ -158,24 +158,20 @@ make_spatially_varying_mesh1 <- function(num_vertices){
 
 make_spatially_varying_mesh2 <- function(param, nonoverlapping_line_transects=nonoverlapping){
 
-  
-  hex_points <- fm_hexagon_lattice(mexdolphin_sf$ppoly, edge_len = 20)
-  # transect_points <- st_cast(nonoverlapping$geometry, "POINT")
-  seed_points <- hex_points # c(transect_points, hex_points)
-  
-  extension_amount = 130 # seems to work well in practice
+  seed_points <- fm_hexagon_lattice(mexdolphin_sf$ppoly, edge_len = 20)
+
+  extension_amount <- 130 # seems to work well in practice
   
   ext <- fm_extensions(
     mexdolphin_sf$ppoly,
     convex = extension_amount,
     crs = fm_crs(mexdolphin_sf$mesh)
-  )
+  )[[1]]
   
   mesh1 <- fm_rcdt_2d(
     loc = seed_points,
-    boundary = ext[[1]],
+    boundary = ext,
     refine=F,
-    # extend = list(offset = -0.2),
     crs = fm_crs(mexdolphin_sf$mesh)
   )
 
@@ -272,8 +268,6 @@ test_param_tradeoff <- function(
   for (param in params){
     cat("\n       ", func_name, "param =", param, "\n")
     
-    rm(m, ips, some_model_fit); invisible(gc())
-    
     start <- proc.time()
     cat("making mesh and ips \n")
     
@@ -305,11 +299,12 @@ test_param_tradeoff <- function(
     run_time <- (end-start)[[3]]
     print(run_time)
   
-    
     #record stats
     fit_time <- c(fit_time, run_time)
     error <- c(error, mpe)
     
+    # clear memory now for the next iteration
+    rm(m, ips, some_model_fit); invisible(gc())
   }
   
   # save the plot
@@ -319,8 +314,8 @@ test_param_tradeoff <- function(
   plot(
     error, 
     fit_time,
-    # accross all methods and params, 80 puts them roughly on the same scale
-    ylim = range(0, 75, fit_time), 
+    # accross all methods and params, the highest fit time seen was 80
+    ylim = range(0, 80, fit_time), 
     xlim = range(0:1, error),
     type = "c", # lines near but not connecting each point
     xlab = "MAPE as %",
@@ -340,12 +335,12 @@ test_param_tradeoff <- function(
   # save the plot
   dev.off()
   
-  data.frame(fit_time=fit_time, error=error, param=param)
+  data.frame(fit_time=fit_time, error=error, params=params)
 
 }
 
 
-if (T){
+if (FALSE){
   
   ### get some data
   set.seed(123)
@@ -378,13 +373,14 @@ if (T){
   
   setwd("sim_results")
   for (setup in different_setups){
-    test_param_tradeoff(
+    tradeoff <- test_param_tradeoff(
       setup$func_name,
       setup$params,
       setup$subtitle,
       sim_info,
       verbose = T
     )
+    print(tradeoff)
   }
   setwd("..")
 }
