@@ -26,7 +26,7 @@ plot(
   xlab = "Perpendicular distance from observers in km",
   lwd = 2,
   type="l",
-  main = "True probability of detection within transect segment"
+  main = "True probability of detection within the transect segment"
 )
 lines(dd, pa, col = "red", lwd = 2)
 lines(dd, pb, col = "blue", lwd = 2)
