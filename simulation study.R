@@ -1,5 +1,8 @@
 rm(list=ls());while(dev.cur()>1){dev.off()};old_par<- par(no.readonly = T, pch=19);options(digits=3);invisible(gc())
 
+renv::install()
+install.packages("INLA", repos=c(getOption("repos"), INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
+
 library(INLA)
 library(inlabru)
 library(sf)
