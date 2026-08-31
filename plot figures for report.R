@@ -12,8 +12,6 @@ library(latex2exp)
 library(knitr)
 library(tinytex)
 
-my_dir <- r"(C:\Users\ND\OneDrive - University of Edinburgh\Dissertation\UOE-diss)"
-setwd(my_dir)
 source("simulate 2D ground truth.R")
 source("observer models.R")
 source("function Definitions.R")

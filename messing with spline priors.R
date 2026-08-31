@@ -9,8 +9,6 @@ library(patchwork)
 library(latex2exp)
 library(dplyr)
 
-my_dir <- r"(C:\Users\ND\OneDrive - University of Edinburgh\Dissertation\UOE-diss)"
-setwd(my_dir)
 source("function Definitions.R")
 
 dists_grid <- seq(0,8, length.out=1000)

@@ -8,8 +8,6 @@ library(ggplot2)
 library(patchwork)
 library(dplyr)
 
-my_dir <- r"(C:\Users\ND\OneDrive - University of Edinburgh\Dissertation\UOE-diss)"
-setwd(my_dir)
 source("simulate 2D ground truth.R")
 source("observer models.R")
 source("function Definitions.R")
@@ -112,6 +110,6 @@ for (i in 1:nsims){
   #save results early just in case
   setwd("sim_results")
   saveRDS(results, file=file_name)
-  setwd(my_dir)
+  setwd("..")
   print(some_results)
 }
